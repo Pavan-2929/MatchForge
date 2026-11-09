@@ -1,0 +1,1 @@
+{"version":3,"file":"preprocessing.d.ts","sourceRoot":"","sources":["../../src/types/preprocessing.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,gBAAgB;IAC/B,SAAS,CAAC,EAAE,OAAO,CAAC;IACpB,IAAI,CAAC,EAAE,OAAO,CAAC;IACf,iBAAiB,CAAC,EAAE,OAAO,CAAC;IAC5B,aAAa,CAAC,EAAE,OAAO,CAAC;IACxB,mBAAmB,CAAC,EAAE,OAAO,CAAC;CAC/B"}
