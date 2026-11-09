@@ -22,3 +22,19 @@ export { cosineSimilarity } from "./similarity/cosine.js";
 export { soundex, soundexSimilarity } from "./similarity/soundex.js";
 
 export { metaphone, metaphoneSimilarity } from "./similarity/metaphone.js";
+
+
+// Matching engine
+export { compareRecords } from "./matching/compareRecords.js";
+export type { CompareOptions } from "./matching/compareRecords.js";
+
+export { matchRecords } from "./matching/matchRecords.js";
+
+// Matching types
+export type {
+  SimilarityMethod,
+  MatchingOptions,
+  MatchCandidate,
+  RecordMatch,
+  MatchingResult,
+} from "./types/matching.js";

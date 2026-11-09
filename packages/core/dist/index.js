@@ -478,7 +478,111 @@ function metaphone(value) {
 function metaphoneSimilarity(a, b) {
   return metaphone(a) === metaphone(b) ? 1 : 0;
 }
+
+// src/matching/algorithmRegistry.ts
+var algorithmRegistry = {
+  levenshtein: levenshteinSimilarity,
+  "damerau-levenshtein": damerauLevenshteinSimilarity,
+  jaro: jaroSimilarity,
+  "jaro-winkler": jaroWinklerSimilarity,
+  jaccard: jaccardSimilarity,
+  dice: diceSimilarity,
+  cosine: cosineSimilarity,
+  soundex: soundexSimilarity,
+  metaphone: metaphoneSimilarity
+};
+
+// src/matching/compareRecords.ts
+function compareRecords(a, b, options = {}) {
+  const {
+    method = "jaro-winkler",
+    normalization = {},
+    algorithmOptions = {}
+  } = options;
+  const normalizedA = normalizeString(a, normalization);
+  const normalizedB = normalizeString(b, normalization);
+  const similarityFunction = algorithmRegistry[method];
+  return similarityFunction(normalizedA, normalizedB, algorithmOptions);
+}
+
+// src/matching/matchRecords.ts
+function getStringValue(record, key, index, recordType) {
+  const value = record[key];
+  if (typeof value !== "string") {
+    throw new Error(
+      `${recordType} record at index ${index} must have a string value for "${key}".`
+    );
+  }
+  return value;
+}
+function matchRecords(source, target, options) {
+  const {
+    sourceKey,
+    targetKey,
+    method = "jaro-winkler",
+    threshold = 0.7,
+    topK = 1,
+    normalization = {},
+    algorithmOptions = {}
+  } = options;
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+    throw new Error("Threshold must be between 0 and 1.");
+  }
+  if (!Number.isInteger(topK) || topK < 1) {
+    throw new Error("topK must be a positive integer.");
+  }
+  const matches = source.map((sourceRecord, sourceIndex) => {
+    const sourceValue = getStringValue(
+      sourceRecord,
+      sourceKey,
+      sourceIndex,
+      "Source"
+    );
+    const normalizedSource = normalizeString(sourceValue, normalization);
+    if (normalizedSource.trim().length === 0) {
+      return {
+        source: sourceRecord,
+        candidates: [],
+        matched: false
+      };
+    }
+    const candidates = target.map((targetRecord, targetIndex) => {
+      const targetValue = getStringValue(
+        targetRecord,
+        targetKey,
+        targetIndex,
+        "Target"
+      );
+      if (normalizeString(targetValue, normalization).trim() === "") {
+        return null;
+      }
+      const score = compareRecords(sourceValue, targetValue, {
+        method,
+        normalization,
+        algorithmOptions
+      });
+      return {
+        record: targetRecord,
+        score,
+        method
+      };
+    }).filter((candidate) => candidate !== null).filter((candidate) => candidate.score >= threshold).sort((a, b) => b.score - a.score).slice(0, topK);
+    return {
+      source: sourceRecord,
+      candidates,
+      matched: candidates.length > 0
+    };
+  });
+  const unmatched = matches.filter((match) => !match.matched).map((match) => match.source);
+  return {
+    matches,
+    unmatched,
+    totalSourceRecords: source.length,
+    totalTargetRecords: target.length
+  };
+}
 export {
+  compareRecords,
   cosineSimilarity,
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,
@@ -488,6 +592,7 @@ export {
   jaroWinklerSimilarity,
   levenshteinDistance,
   levenshteinSimilarity,
+  matchRecords,
   metaphone,
   metaphoneSimilarity,
   normalizeString,
