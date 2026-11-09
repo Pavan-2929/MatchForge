@@ -1,3 +1,3 @@
-export function normalizeString(value: string): string {
-  return value.trim().toLowerCase();
-}
+export { normalizeString } from "./preprocessing/normalize.js";
+
+export type { NormalizeOptions } from "./types/preprocessing.js";
