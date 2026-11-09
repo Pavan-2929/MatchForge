@@ -11,3 +11,5 @@ export {
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,
 } from "./similarity/damerauLevenshtein.js";
+
+export { jaroSimilarity, jaroWinklerSimilarity } from "./similarity/jaro.js";
