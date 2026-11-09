@@ -6,3 +6,8 @@ export {
   levenshteinDistance,
   levenshteinSimilarity,
 } from "./similarity/levenshtein.js";
+
+export {
+  damerauLevenshteinDistance,
+  damerauLevenshteinSimilarity,
+} from "./similarity/damerauLevenshtein.js";
