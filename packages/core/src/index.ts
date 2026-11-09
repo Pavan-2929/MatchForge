@@ -18,3 +18,5 @@ export { jaccardSimilarity, diceSimilarity } from "./similarity/qgram.js";
 export type { QGramOptions } from "./types/similarity.js";
 
 export { cosineSimilarity } from "./similarity/cosine.js";
+
+export { soundex, soundexSimilarity } from "./similarity/soundex.js";
