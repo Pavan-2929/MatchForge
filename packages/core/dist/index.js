@@ -1,4 +1,7 @@
-export function normalizeString(value) {
-    return value.trim().toLowerCase();
+// src/index.ts
+function normalizeString(value) {
+  return value.trim().toLowerCase();
 }
-//# sourceMappingURL=index.js.map
+export {
+  normalizeString
+};
