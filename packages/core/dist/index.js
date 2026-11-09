@@ -189,9 +189,64 @@ function jaroWinklerSimilarity(a, b) {
   const scalingFactor = 0.1;
   return jaroScore + prefixLength * scalingFactor * (1 - jaroScore);
 }
+
+// src/similarity/qgram.ts
+function generateQGrams(value, q) {
+  const characters = Array.from(value);
+  const qGrams = /* @__PURE__ */ new Set();
+  for (let i = 0; i <= characters.length - q; i++) {
+    qGrams.add(characters.slice(i, i + q).join(""));
+  }
+  return qGrams;
+}
+function jaccardSimilarity(a, b, options = {}) {
+  const { q = 2 } = options;
+  if (!Number.isInteger(q) || q < 1) {
+    throw new RangeError("q must be a positive integer");
+  }
+  if (a === b) {
+    return 1;
+  }
+  const aGrams = generateQGrams(a, q);
+  const bGrams = generateQGrams(b, q);
+  if (aGrams.size === 0 || bGrams.size === 0) {
+    return 0;
+  }
+  let intersectionSize = 0;
+  for (const gram of aGrams) {
+    if (bGrams.has(gram)) {
+      intersectionSize++;
+    }
+  }
+  const unionSize = (/* @__PURE__ */ new Set([...aGrams, ...bGrams])).size;
+  return intersectionSize / unionSize;
+}
+function diceSimilarity(a, b, options = {}) {
+  const { q = 2 } = options;
+  if (!Number.isInteger(q) || q < 1) {
+    throw new RangeError("q must be a positive integer");
+  }
+  if (a === b) {
+    return 1;
+  }
+  const aGrams = generateQGrams(a, q);
+  const bGrams = generateQGrams(b, q);
+  if (aGrams.size === 0 || bGrams.size === 0) {
+    return 0;
+  }
+  let intersectionSize = 0;
+  for (const gram of aGrams) {
+    if (bGrams.has(gram)) {
+      intersectionSize++;
+    }
+  }
+  return 2 * intersectionSize / (aGrams.size + bGrams.size);
+}
 export {
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,
+  diceSimilarity,
+  jaccardSimilarity,
   jaroSimilarity,
   jaroWinklerSimilarity,
   levenshteinDistance,
