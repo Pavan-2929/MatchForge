@@ -16,3 +16,5 @@ export { jaroSimilarity, jaroWinklerSimilarity } from "./similarity/jaro.js";
 
 export { jaccardSimilarity, diceSimilarity } from "./similarity/qgram.js";
 export type { QGramOptions } from "./types/similarity.js";
+
+export { cosineSimilarity } from "./similarity/cosine.js";
