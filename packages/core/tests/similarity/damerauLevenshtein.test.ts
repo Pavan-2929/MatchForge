@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { damerauLevenshteinDistance, damerauLevenshteinSimilarity } from "../src/similarity/damerauLevenshtein.js";
+import {
+  damerauLevenshteinDistance,
+  damerauLevenshteinSimilarity,
+} from "../../src/similarity/damerauLevenshtein.js";
 
 describe("damerauLevenshteinDistance", () => {
   it("should return zero for identical strings", () => {

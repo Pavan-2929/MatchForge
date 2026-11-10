@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { levenshteinDistance, levenshteinSimilarity } from "../src/similarity/levenshtein.js";
+import {
+  levenshteinDistance,
+  levenshteinSimilarity,
+} from "../../src/similarity/levenshtein.js";
 
 describe("levenshteinDistance", () => {
   it("should calculate the distance between two different strings", () => {
@@ -58,4 +61,3 @@ describe("levenshteinSimilarity", () => {
     expect(levenshteinSimilarity("😀", "😃")).toBe(0);
   });
 });
-

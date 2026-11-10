@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { metaphone, metaphoneSimilarity } from "../src/similarity/metaphone.js";
+import {
+  metaphone,
+  metaphoneSimilarity,
+} from "../../src/similarity/metaphone.js";
 
 describe("metaphone", () => {
   it("should encode common words", () => {

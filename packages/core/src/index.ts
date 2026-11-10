@@ -24,8 +24,8 @@ export { soundex, soundexSimilarity } from "./similarity/soundex.js";
 export { metaphone, metaphoneSimilarity } from "./similarity/metaphone.js";
 
 // Matching engine
-export { compareRecords } from "./matching/compareRecords.js";
-export type { CompareOptions } from "./matching/compareRecords.js";
+export { compareStrings } from "./matching/compareStrings.js";
+export type { CompareOptions } from "./matching/compareStrings.js";
 
 export { matchRecords } from "./matching/matchRecords.js";
 

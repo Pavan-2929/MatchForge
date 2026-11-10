@@ -12,22 +12,29 @@ export interface CompareOptions {
   algorithmOptions?: QGramOptions;
 }
 
-export function compareRecords(
+export function compareStrings(
   a: string,
   b: string,
   options: CompareOptions = {},
 ): number {
+  if (typeof a !== "string" || typeof b !== "string") {
+    throw new TypeError("Both inputs must be strings.");
+  }
 
   const {
     method = "jaro-winkler",
     normalization = {},
     algorithmOptions = {},
   } = options;
-  
+
   const normalizedA = normalizeString(a, normalization);
   const normalizedB = normalizeString(b, normalization);
 
   const similarityFunction = algorithmRegistry[method];
+
+  if (!similarityFunction) {
+    throw new Error(`Unsupported similarity method: ${method}`);
+  }
 
   return similarityFunction(normalizedA, normalizedB, algorithmOptions);
 }

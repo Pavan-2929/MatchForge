@@ -6,5 +6,5 @@ export interface CompareOptions {
     normalization?: NormalizeOptions;
     algorithmOptions?: QGramOptions;
 }
-export declare function compareRecords(a: string, b: string, options?: CompareOptions): number;
-//# sourceMappingURL=compareRecords.d.ts.map
+export declare function compareStrings(a: string, b: string, options?: CompareOptions): number;
+//# sourceMappingURL=compareStrings.d.ts.map

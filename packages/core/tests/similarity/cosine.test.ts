@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cosineSimilarity } from "../src/similarity/cosine.js";
+import { cosineSimilarity } from "../../src/similarity/cosine.js";
 
 describe("cosineSimilarity", () => {
   it("should return 1 for identical strings", () => {

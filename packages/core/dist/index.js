@@ -492,8 +492,11 @@ var algorithmRegistry = {
   metaphone: metaphoneSimilarity
 };
 
-// src/matching/compareRecords.ts
-function compareRecords(a, b, options = {}) {
+// src/matching/compareStrings.ts
+function compareStrings(a, b, options = {}) {
+  if (typeof a !== "string" || typeof b !== "string") {
+    throw new TypeError("Both inputs must be strings.");
+  }
   const {
     method = "jaro-winkler",
     normalization = {},
@@ -502,6 +505,9 @@ function compareRecords(a, b, options = {}) {
   const normalizedA = normalizeString(a, normalization);
   const normalizedB = normalizeString(b, normalization);
   const similarityFunction = algorithmRegistry[method];
+  if (!similarityFunction) {
+    throw new Error(`Unsupported similarity method: ${method}`);
+  }
   return similarityFunction(normalizedA, normalizedB, algorithmOptions);
 }
 
@@ -514,10 +520,16 @@ function getMatchingFields(options) {
       weight: 1
     }
   ];
+  if (!Array.isArray(fields)) {
+    throw new TypeError("Fields must be an array.");
+  }
   if (fields.length === 0) {
     throw new Error("At least one matching field is required.");
   }
   for (const field of fields) {
+    if (!field || typeof field !== "object" || Array.isArray(field)) {
+      throw new TypeError("Each matching field must be an object.");
+    }
     const weight = field.weight ?? 1;
     if (!field.sourceKey || !field.targetKey) {
       throw new Error("Source and target keys are required.");
@@ -562,7 +574,17 @@ function getStringValue(record, key, index, recordType) {
   }
   return value;
 }
+function filterValidRecords(records) {
+  return records.filter(
+    (record) => record !== null && typeof record === "object" && !Array.isArray(record)
+  );
+}
 function matchRecords(source, target, options) {
+  if (!Array.isArray(source) || !Array.isArray(target)) {
+    throw new TypeError("Source and target must be arrays.");
+  }
+  source = filterValidRecords(source);
+  target = filterValidRecords(target);
   const fields = getMatchingFields(options);
   const {
     method = "jaro-winkler",
@@ -601,12 +623,10 @@ function matchRecords(source, target, options) {
         if (sourceValue === void 0 || targetValue === void 0) {
           continue;
         }
-        const normalizedSource = normalizeString(sourceValue, normalization);
-        const normalizedTarget = normalizeString(targetValue, normalization);
-        if (normalizedSource.trim() === "" || normalizedTarget.trim() === "") {
+        if (sourceValue.trim() === "" || targetValue.trim() === "") {
           continue;
         }
-        const score2 = compareRecords(sourceValue, targetValue, {
+        const score2 = compareStrings(sourceValue, targetValue, {
           method,
           normalization,
           algorithmOptions
@@ -646,7 +666,7 @@ function matchRecords(source, target, options) {
   };
 }
 export {
-  compareRecords,
+  compareStrings,
   cosineSimilarity,
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,

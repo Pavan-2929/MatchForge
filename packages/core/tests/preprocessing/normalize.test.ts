@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeString } from "../src/preprocessing/normalize.js";
+import { normalizeString } from "../../src/preprocessing/normalize.js";
 
 describe("normalizeString", () => {
   it("should convert text to lowercase by default", () => {

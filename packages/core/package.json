@@ -1,7 +1,7 @@
 {
   "name": "@matchforge/core",
   "version": "0.1.0",
-  "description": "A toolkit for string similarity and data matching",
+  "description": "A TypeScript toolkit for string similarity and entity resolution",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,7 +9,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -20,16 +21,26 @@
     "url": "https://github.com/Pavan-2929/MatchForge.git",
     "directory": "packages/core"
   },
+  "homepage": "https://github.com/Pavan-2929/MatchForge#readme",
+  "bugs": {
+    "url": "https://github.com/Pavan-2929/MatchForge/issues"
+  },
   "keywords": [
     "string-similarity",
     "string-matching",
+    "fuzzy-matching",
     "entity-resolution",
+    "record-linkage",
     "data-matching",
-    "fuzzy-matching"
+    "typescript"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsup src/index.ts --format esm && tsc --emitDeclarationOnly",
-    "test": "vitest run"
+    "build": "tsup src/index.ts --format esm --clean && tsc --emitDeclarationOnly",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

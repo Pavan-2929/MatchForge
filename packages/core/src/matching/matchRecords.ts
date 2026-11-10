@@ -1,4 +1,4 @@
-import { compareRecords } from "./compareRecords.js";
+import { compareStrings } from "./compareStrings.js";
 import { getMatchingFields } from "./getMatchingFields.js";
 import { calculateWeightedScore } from "./calculateWeightedScore.js";
 
@@ -8,8 +8,6 @@ import type {
   MatchCandidate,
   FieldMatchScore,
 } from "../types/matching.js";
-
-import { normalizeString } from "../preprocessing/normalize.js";
 
 function getStringValue(
   record: object,
@@ -32,11 +30,25 @@ function getStringValue(
   return value;
 }
 
+function filterValidRecords<T>(records: T[]): T[] {
+  return records.filter(
+    (record) =>
+      record !== null && typeof record === "object" && !Array.isArray(record),
+  );
+}
+
 export function matchRecords<S extends object, T extends object>(
   source: S[],
   target: T[],
   options: MatchingOptions,
 ): MatchingResult<S, T> {
+  if (!Array.isArray(source) || !Array.isArray(target)) {
+    throw new TypeError("Source and target must be arrays.");
+  }
+
+  source = filterValidRecords(source);
+  target = filterValidRecords(target);
+
   const fields = getMatchingFields(options);
 
   const {
@@ -86,15 +98,11 @@ export function matchRecords<S extends object, T extends object>(
           continue;
         }
 
-        const normalizedSource = normalizeString(sourceValue, normalization);
-
-        const normalizedTarget = normalizeString(targetValue, normalization);
-
-        if (normalizedSource.trim() === "" || normalizedTarget.trim() === "") {
+        if (sourceValue.trim() === "" || targetValue.trim() === "") {
           continue;
         }
 
-        const score = compareRecords(sourceValue, targetValue, {
+        const score = compareStrings(sourceValue, targetValue, {
           method,
           normalization,
           algorithmOptions,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { soundex, soundexSimilarity } from "../src/similarity/soundex.js";
+import { soundex, soundexSimilarity } from "../../src/similarity/soundex.js";
 
 describe("soundex", () => {
   it("should encode common names correctly", () => {

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { jaroSimilarity, jaroWinklerSimilarity } from "../src/similarity/jaro.js";
+import {
+  jaroSimilarity,
+  jaroWinklerSimilarity,
+} from "../../src/similarity/jaro.js";
 
 describe("jaroSimilarity", () => {
   it("should return 1 for identical strings", () => {

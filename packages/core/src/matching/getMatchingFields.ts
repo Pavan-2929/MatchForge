@@ -9,11 +9,19 @@ export function getMatchingFields(options: MatchingOptions): MatchingField[] {
     },
   ];
 
+  if (!Array.isArray(fields)) {
+    throw new TypeError("Fields must be an array.");
+  }
+
   if (fields.length === 0) {
     throw new Error("At least one matching field is required.");
   }
 
   for (const field of fields) {
+    if (!field || typeof field !== "object" || Array.isArray(field)) {
+      throw new TypeError("Each matching field must be an object.");
+    }
+    
     const weight = field.weight ?? 1;
 
     if (!field.sourceKey || !field.targetKey) {
