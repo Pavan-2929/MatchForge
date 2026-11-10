@@ -1,0 +1,1 @@
+{"version":3,"file":"qgram.d.ts","sourceRoot":"","sources":["../../src/similarity/qgram.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,wBAAwB,CAAC;AAa3D,wBAAgB,iBAAiB,CAC/B,CAAC,EAAE,MAAM,EACT,CAAC,EAAE,MAAM,EACT,OAAO,GAAE,YAAiB,GACzB,MAAM,CA6BR;AAED,wBAAgB,cAAc,CAC5B,CAAC,EAAE,MAAM,EACT,CAAC,EAAE,MAAM,EACT,OAAO,GAAE,YAAiB,GACzB,MAAM,CA2BR"}
