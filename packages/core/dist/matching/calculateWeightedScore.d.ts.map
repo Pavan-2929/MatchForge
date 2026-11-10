@@ -1,0 +1,1 @@
+{"version":3,"file":"calculateWeightedScore.d.ts","sourceRoot":"","sources":["../../src/matching/calculateWeightedScore.ts"],"names":[],"mappings":"AAAA,UAAU,UAAU;IAClB,KAAK,EAAE,MAAM,CAAC;IACd,MAAM,EAAE,MAAM,CAAC;CAChB;AAED,wBAAgB,sBAAsB,CAAC,WAAW,EAAE,UAAU,EAAE,GAAG,MAAM,GAAG,IAAI,CAkB/E"}

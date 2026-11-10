@@ -23,7 +23,6 @@ export { soundex, soundexSimilarity } from "./similarity/soundex.js";
 
 export { metaphone, metaphoneSimilarity } from "./similarity/metaphone.js";
 
-
 // Matching engine
 export { compareRecords } from "./matching/compareRecords.js";
 export type { CompareOptions } from "./matching/compareRecords.js";
@@ -33,7 +32,9 @@ export { matchRecords } from "./matching/matchRecords.js";
 // Matching types
 export type {
   SimilarityMethod,
+  MatchingField,
   MatchingOptions,
+  FieldMatchScore,
   MatchCandidate,
   RecordMatch,
   MatchingResult,

@@ -11,5 +11,5 @@ export { metaphone, metaphoneSimilarity } from "./similarity/metaphone.js";
 export { compareRecords } from "./matching/compareRecords.js";
 export type { CompareOptions } from "./matching/compareRecords.js";
 export { matchRecords } from "./matching/matchRecords.js";
-export type { SimilarityMethod, MatchingOptions, MatchCandidate, RecordMatch, MatchingResult, } from "./types/matching.js";
+export type { SimilarityMethod, MatchingField, MatchingOptions, FieldMatchScore, MatchCandidate, RecordMatch, MatchingResult, } from "./types/matching.js";
 //# sourceMappingURL=index.d.ts.map
