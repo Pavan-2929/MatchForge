@@ -505,9 +505,56 @@ function compareRecords(a, b, options = {}) {
   return similarityFunction(normalizedA, normalizedB, algorithmOptions);
 }
 
+// src/matching/getMatchingFields.ts
+function getMatchingFields(options) {
+  const fields = options.fields ?? [
+    {
+      sourceKey: options.sourceKey,
+      targetKey: options.targetKey,
+      weight: 1
+    }
+  ];
+  if (fields.length === 0) {
+    throw new Error("At least one matching field is required.");
+  }
+  for (const field of fields) {
+    const weight = field.weight ?? 1;
+    if (!field.sourceKey || !field.targetKey) {
+      throw new Error("Source and target keys are required.");
+    }
+    if (!Number.isFinite(weight) || weight < 0) {
+      throw new Error("Weight must be a finite, non-negative number.");
+    }
+  }
+  if (fields.every((field) => (field.weight ?? 1) === 0)) {
+    throw new Error("At least one field must have a positive weight.");
+  }
+  return fields;
+}
+
+// src/matching/calculateWeightedScore.ts
+function calculateWeightedScore(fieldScores) {
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (const field of fieldScores) {
+    if (field.weight <= 0) {
+      continue;
+    }
+    weightedSum += field.score * field.weight;
+    totalWeight += field.weight;
+  }
+  if (totalWeight === 0) {
+    return null;
+  }
+  return weightedSum / totalWeight;
+}
+
 // src/matching/matchRecords.ts
 function getStringValue(record, key, index, recordType) {
   const value = record[key];
+  if (value === void 0 || value === null) {
+    return void 0;
+  }
   if (typeof value !== "string") {
     throw new Error(
       `${recordType} record at index ${index} must have a string value for "${key}".`
@@ -516,9 +563,8 @@ function getStringValue(record, key, index, recordType) {
   return value;
 }
 function matchRecords(source, target, options) {
+  const fields = getMatchingFields(options);
   const {
-    sourceKey,
-    targetKey,
     method = "jaro-winkler",
     threshold = 0.7,
     topK = 1,
@@ -532,45 +578,63 @@ function matchRecords(source, target, options) {
     throw new Error("topK must be a positive integer.");
   }
   const matches = source.map((sourceRecord, sourceIndex) => {
-    const sourceValue = getStringValue(
-      sourceRecord,
-      sourceKey,
-      sourceIndex,
-      "Source"
-    );
-    const normalizedSource = normalizeString(sourceValue, normalization);
-    if (normalizedSource.trim().length === 0) {
-      return {
-        source: sourceRecord,
-        candidates: [],
-        matched: false
-      };
-    }
-    const candidates = target.map((targetRecord, targetIndex) => {
-      const targetValue = getStringValue(
-        targetRecord,
-        targetKey,
-        targetIndex,
-        "Target"
-      );
-      if (normalizeString(targetValue, normalization).trim() === "") {
-        return null;
+    const candidates = [];
+    target.forEach((targetRecord, targetIndex) => {
+      const fieldScores = [];
+      for (const field of fields) {
+        const weight = field.weight ?? 1;
+        if (weight === 0) {
+          continue;
+        }
+        const sourceValue = getStringValue(
+          sourceRecord,
+          field.sourceKey,
+          sourceIndex,
+          "Source"
+        );
+        const targetValue = getStringValue(
+          targetRecord,
+          field.targetKey,
+          targetIndex,
+          "Target"
+        );
+        if (sourceValue === void 0 || targetValue === void 0) {
+          continue;
+        }
+        const normalizedSource = normalizeString(sourceValue, normalization);
+        const normalizedTarget = normalizeString(targetValue, normalization);
+        if (normalizedSource.trim() === "" || normalizedTarget.trim() === "") {
+          continue;
+        }
+        const score2 = compareRecords(sourceValue, targetValue, {
+          method,
+          normalization,
+          algorithmOptions
+        });
+        fieldScores.push({
+          sourceKey: field.sourceKey,
+          targetKey: field.targetKey,
+          score: score2,
+          weight
+        });
       }
-      const score = compareRecords(sourceValue, targetValue, {
-        method,
-        normalization,
-        algorithmOptions
-      });
-      return {
+      const score = calculateWeightedScore(fieldScores);
+      if (score === null || score < threshold) {
+        return;
+      }
+      candidates.push({
         record: targetRecord,
         score,
-        method
-      };
-    }).filter((candidate) => candidate !== null).filter((candidate) => candidate.score >= threshold).sort((a, b) => b.score - a.score).slice(0, topK);
+        method,
+        fieldScores
+      });
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    const topCandidates = candidates.slice(0, topK);
     return {
       source: sourceRecord,
-      candidates,
-      matched: candidates.length > 0
+      candidates: topCandidates,
+      matched: topCandidates.length > 0
     };
   });
   const unmatched = matches.filter((match) => !match.matched).map((match) => match.source);

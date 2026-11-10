@@ -1,9 +1,12 @@
 import { compareRecords } from "./compareRecords.js";
+import { getMatchingFields } from "./getMatchingFields.js";
+import { calculateWeightedScore } from "./calculateWeightedScore.js";
 
 import type {
   MatchingOptions,
   MatchingResult,
-  SimilarityMethod,
+  MatchCandidate,
+  FieldMatchScore,
 } from "../types/matching.js";
 
 import { normalizeString } from "../preprocessing/normalize.js";
@@ -13,8 +16,12 @@ function getStringValue(
   key: string,
   index: number,
   recordType: string,
-): string {
+): string | undefined {
   const value = (record as Record<string, unknown>)[key];
+
+  if (value === undefined || value === null) {
+    return undefined;
+  }
 
   if (typeof value !== "string") {
     throw new Error(
@@ -30,9 +37,9 @@ export function matchRecords<S extends object, T extends object>(
   target: T[],
   options: MatchingOptions,
 ): MatchingResult<S, T> {
+  const fields = getMatchingFields(options);
+
   const {
-    sourceKey,
-    targetKey,
     method = "jaro-winkler",
     threshold = 0.7,
     topK = 1,
@@ -49,33 +56,42 @@ export function matchRecords<S extends object, T extends object>(
   }
 
   const matches = source.map((sourceRecord, sourceIndex) => {
-    const sourceValue = getStringValue(
-      sourceRecord,
-      sourceKey,
-      sourceIndex,
-      "Source",
-    );
+    const candidates: MatchCandidate<T>[] = [];
 
-    const normalizedSource = normalizeString(sourceValue, normalization);
+    target.forEach((targetRecord, targetIndex) => {
+      const fieldScores: FieldMatchScore[] = [];
 
-    if (normalizedSource.trim().length === 0) {
-      return {
-        source: sourceRecord,
-        candidates: [],
-        matched: false,
-      };
-    }
+      for (const field of fields) {
+        const weight = field.weight ?? 1;
 
-    const candidates = target.map((targetRecord, targetIndex) => {
+        if (weight === 0) {
+          continue;
+        }
+
+        const sourceValue = getStringValue(
+          sourceRecord,
+          field.sourceKey,
+          sourceIndex,
+          "Source",
+        );
+
         const targetValue = getStringValue(
           targetRecord,
-          targetKey,
+          field.targetKey,
           targetIndex,
           "Target",
         );
 
-        if (normalizeString(targetValue, normalization).trim() === "") {
-          return null;
+        if (sourceValue === undefined || targetValue === undefined) {
+          continue;
+        }
+
+        const normalizedSource = normalizeString(sourceValue, normalization);
+
+        const normalizedTarget = normalizeString(targetValue, normalization);
+
+        if (normalizedSource.trim() === "" || normalizedTarget.trim() === "") {
+          continue;
         }
 
         const score = compareRecords(sourceValue, targetValue, {
@@ -84,21 +100,36 @@ export function matchRecords<S extends object, T extends object>(
           algorithmOptions,
         });
 
-        return {
-          record: targetRecord,
+        fieldScores.push({
+          sourceKey: field.sourceKey,
+          targetKey: field.targetKey,
           score,
-          method,
-        };
-      })
-      .filter((candidate) => candidate !== null)
-      .filter((candidate) => candidate.score >= threshold)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
+          weight,
+        });
+      }
+
+      const score = calculateWeightedScore(fieldScores);
+
+      if (score === null || score < threshold) {
+        return;
+      }
+
+      candidates.push({
+        record: targetRecord,
+        score,
+        method,
+        fieldScores,
+      });
+    });
+
+    candidates.sort((a, b) => b.score - a.score);
+
+    const topCandidates = candidates.slice(0, topK);
 
     return {
       source: sourceRecord,
-      candidates,
-      matched: candidates.length > 0,
+      candidates: topCandidates,
+      matched: topCandidates.length > 0,
     };
   });
 

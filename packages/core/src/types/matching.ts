@@ -12,24 +12,46 @@ export type SimilarityMethod =
   | "soundex"
   | "metaphone";
 
-export interface MatchingOptions {
+export interface FieldMatchScore {
   sourceKey: string;
   targetKey: string;
+  score: number;
+  weight: number;
+}
 
+export interface MatchingField {
+  sourceKey: string;
+  targetKey: string;
+  weight?: number;
+}
+
+interface CommonMatchingOptions {
   method?: SimilarityMethod;
-
   threshold?: number;
-
   topK?: number;
-
   normalization?: NormalizeOptions;
   algorithmOptions?: QGramOptions;
 }
+
+export type MatchingOptions = CommonMatchingOptions &
+  (
+    | {
+        fields: MatchingField[];
+        sourceKey?: never;
+        targetKey?: never;
+      }
+    | {
+        sourceKey: string;
+        targetKey: string;
+        fields?: never;
+      }
+  );
 
 export interface MatchCandidate<T> {
   record: T;
   score: number;
   method: SimilarityMethod;
+  fieldScores: FieldMatchScore[];
 }
 
 export interface RecordMatch<S, T> {
