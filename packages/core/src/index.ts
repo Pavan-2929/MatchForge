@@ -39,3 +39,21 @@ export type {
   RecordMatch,
   MatchingResult,
 } from "./types/matching.js";
+
+// CSV utilities
+export { parseCSV } from "./csv/parseCSV.js";
+export { matchCSV } from "./csv/matchCSV.js";
+export { exportMatches } from "./csv/exportMatches.js";
+
+export type {
+  CSVParseOptions,
+  CSVParseError,
+  CSVParseResult,
+  CSVRecord,
+  CSVMatchOptions,
+  CSVMatchCandidate,
+  CSVRecordMatch,
+  CSVUnmatchedRecord,
+  CSVMatchResult,
+  CSVExportOptions,
+} from "./csv/types.js";

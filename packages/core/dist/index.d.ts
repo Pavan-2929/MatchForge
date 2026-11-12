@@ -12,4 +12,8 @@ export { compareStrings } from "./matching/compareStrings.js";
 export type { CompareOptions } from "./matching/compareStrings.js";
 export { matchRecords } from "./matching/matchRecords.js";
 export type { SimilarityMethod, MatchingField, MatchingOptions, FieldMatchScore, MatchCandidate, RecordMatch, MatchingResult, } from "./types/matching.js";
+export { parseCSV } from "./csv/parseCSV.js";
+export { matchCSV } from "./csv/matchCSV.js";
+export { exportMatches } from "./csv/exportMatches.js";
+export type { CSVParseOptions, CSVParseError, CSVParseResult, CSVRecord, CSVMatchOptions, CSVMatchCandidate, CSVRecordMatch, CSVUnmatchedRecord, CSVMatchResult, CSVExportOptions, } from "./csv/types.js";
 //# sourceMappingURL=index.d.ts.map

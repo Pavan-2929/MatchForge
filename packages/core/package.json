@@ -43,8 +43,12 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.5.2",
     "tsup": "^8.5.1",
     "typescript": "^5.7.3",
     "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "papaparse": "^5.7.1"
   }
 }
