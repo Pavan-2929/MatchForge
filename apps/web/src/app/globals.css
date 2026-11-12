@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Light theme */
+
+:root {
+  color-scheme: light;
+
+  --background: #f8f7f2;
+  --foreground: #252a23;
+
+  --card: #ffffff;
+  --card-foreground: #252a23;
+
+  --popover: #ffffff;
+  --popover-foreground: #252a23;
+
+  --primary: #286b49;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eeece4;
+  --secondary-foreground: #393d34;
+
+  --muted: #f0efe9;
+  --muted-foreground: #73776d;
+
+  --accent: #e8efe6;
+  --accent-foreground: #28583c;
+
+  --destructive: #b8443d;
+
+  --border: #e5e3da;
+  --input: #d9d8ce;
+  --ring: #568665;
+
+  --sidebar: #f3f2ec;
+  --sidebar-foreground: #30352d;
+  --sidebar-primary: #286b49;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8efe6;
+  --sidebar-accent-foreground: #28583c;
+  --sidebar-border: #e5e3da;
+  --sidebar-ring: #568665;
+
+  --chart-1: #286b49;
+  --chart-2: #b47b4c;
+  --chart-3: #84956c;
+  --chart-4: #b65f4c;
+  --chart-5: #777d61;
+
+  --radius: 0.625rem;
+}
+
+/* Dark theme */
+
+.dark {
+  color-scheme: dark;
+
+  --background: #191c18;
+  --foreground: #eaece5;
+
+  --card: #222720;
+  --card-foreground: #eaece5;
+
+  --popover: #282d26;
+  --popover-foreground: #eaece5;
+
+  --primary: #78b58c;
+  --primary-foreground: #17271b;
+
+  --secondary: #292d27;
+  --secondary-foreground: #e3e6dc;
+
+  --muted: #252a23;
+  --muted-foreground: #a6aa9f;
+
+  --accent: #2b3a2d;
+  --accent-foreground: #b7d7bb;
+
+  --destructive: #e17b70;
+
+  --border: #373d34;
+  --input: #41483d;
+  --ring: #78b58c;
+
+  --sidebar: #1d211c;
+  --sidebar-foreground: #eaece5;
+  --sidebar-primary: #78b58c;
+  --sidebar-primary-foreground: #17271b;
+  --sidebar-accent: #2b3a2d;
+  --sidebar-accent-foreground: #b7d7bb;
+  --sidebar-border: #373d34;
+  --sidebar-ring: #78b58c;
+
+  --chart-1: #78b58c;
+  --chart-2: #c49a6c;
+  --chart-3: #a0ad7d;
+  --chart-4: #d17c68;
+  --chart-5: #b5b58b;
+}
+
+/* Base styles */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth font-sans;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  ::selection {
+    background: #c9ddc9;
+    color: #203b29;
+  }
+
+  .dark ::selection {
+    background: #426c4c;
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
