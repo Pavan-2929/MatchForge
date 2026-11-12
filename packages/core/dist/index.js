@@ -665,21 +665,130 @@ function matchRecords(source, target, options) {
     totalTargetRecords: target.length
   };
 }
+
+// src/csv/parseCSV.ts
+import Papa from "papaparse";
+function parseCSV(csvText, options = {}) {
+  const result = Papa.parse(csvText, {
+    header: true,
+    dynamicTyping: false,
+    skipEmptyLines: options.skipEmptyLines ?? true,
+    delimiter: options.delimiter ?? ""
+  });
+  const records = result.data;
+  const headers = result.meta.fields ?? [];
+  const errors = result.errors.map((error) => ({
+    type: error.type,
+    code: error.code,
+    message: error.message,
+    row: error.row
+  }));
+  return {
+    records,
+    headers,
+    errors,
+    rowCount: records.length
+  };
+}
+
+// src/csv/matchCSV.ts
+function matchCSV(sourceCSV, targetCSV, options) {
+  const { sourceParseOptions, targetParseOptions, ...matchingOptions } = options;
+  const sourceResult = parseCSV(sourceCSV, sourceParseOptions);
+  const targetResult = parseCSV(targetCSV, targetParseOptions);
+  const matchingResult = matchRecords(
+    sourceResult.records,
+    targetResult.records,
+    matchingOptions
+  );
+  const sourceRecordNumbers = new Map(
+    sourceResult.records.map((record, index) => [record, index + 1])
+  );
+  const targetRecordNumbers = new Map(
+    targetResult.records.map((record, index) => [record, index + 1])
+  );
+  const matches = matchingResult.matches.map((match) => ({
+    source: match.source,
+    sourceRecordNumber: sourceRecordNumbers.get(match.source),
+    candidates: match.candidates.map((candidate) => ({
+      ...candidate,
+      targetRecordNumber: targetRecordNumbers.get(candidate.record)
+    })),
+    matched: match.matched
+  }));
+  const unmatched = matchingResult.unmatched.map((record) => ({
+    record,
+    sourceRecordNumber: sourceRecordNumbers.get(record)
+  }));
+  return {
+    matches,
+    unmatched,
+    totalSourceRecords: matchingResult.totalSourceRecords,
+    totalTargetRecords: matchingResult.totalTargetRecords,
+    sourceHeaders: sourceResult.headers,
+    targetHeaders: targetResult.headers,
+    parseErrors: {
+      source: sourceResult.errors,
+      target: targetResult.errors
+    }
+  };
+}
+
+// src/csv/exportMatches.ts
+import Papa2 from "papaparse";
+function exportMatches(result, options = {}) {
+  const fields = [
+    "source_record_number",
+    "target_record_number",
+    "matched",
+    "score",
+    "method",
+    ...result.sourceHeaders.map((header) => `source_${header}`),
+    ...result.targetHeaders.map((header) => `target_${header}`)
+  ];
+  const rows = [];
+  for (const match of result.matches) {
+    const candidates = match.candidates.length ? match.candidates : [null];
+    for (const candidate of candidates) {
+      const row = {
+        source_record_number: String(match.sourceRecordNumber),
+        target_record_number: candidate ? String(candidate.targetRecordNumber) : "",
+        matched: String(match.matched),
+        score: candidate ? String(candidate.score) : "",
+        method: candidate?.method ?? ""
+      };
+      for (const header of result.sourceHeaders) {
+        row[`source_${header}`] = match.source[header] ?? "";
+      }
+      for (const header of result.targetHeaders) {
+        row[`target_${header}`] = candidate?.record[header] ?? "";
+      }
+      rows.push(row);
+    }
+  }
+  return Papa2.unparse(
+    { fields, data: rows },
+    { delimiter: options.delimiter ?? "," }
+  );
+}
 export {
   compareStrings,
   cosineSimilarity,
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,
   diceSimilarity,
+  exportMatches,
   jaccardSimilarity,
   jaroSimilarity,
   jaroWinklerSimilarity,
   levenshteinDistance,
   levenshteinSimilarity,
+  matchCSV,
   matchRecords,
   metaphone,
   metaphoneSimilarity,
   normalizeString,
+  parseCSV,
   soundex,
   soundexSimilarity
 };

@@ -1,0 +1,1 @@
+{"version":3,"file":"matchCSV.d.ts","sourceRoot":"","sources":["../../src/csv/matchCSV.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,cAAc,EAAE,MAAM,YAAY,CAAC;AAElE,wBAAgB,QAAQ,CACtB,SAAS,EAAE,MAAM,EACjB,SAAS,EAAE,MAAM,EACjB,OAAO,EAAE,eAAe,GACvB,cAAc,CAgDhB"}

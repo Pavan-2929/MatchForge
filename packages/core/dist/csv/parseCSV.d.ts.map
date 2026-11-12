@@ -1,0 +1,1 @@
+{"version":3,"file":"parseCSV.d.ts","sourceRoot":"","sources":["../../src/csv/parseCSV.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,eAAe,EAAE,cAAc,EAAE,MAAM,YAAY,CAAC;AAElE,wBAAgB,QAAQ,CACtB,OAAO,EAAE,MAAM,EACf,OAAO,GAAE,eAAoB,GAC5B,cAAc,CAwBhB"}
