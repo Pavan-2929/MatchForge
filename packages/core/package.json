@@ -1,6 +1,6 @@
 {
   "name": "@matchforge/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A TypeScript toolkit for string similarity and entity resolution",
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pavan-2929/MatchForge.git",
+    "url": "git+https://github.com/Pavan-2929/MatchForge.git",
     "directory": "packages/core"
   },
   "homepage": "https://github.com/Pavan-2929/MatchForge#readme",
