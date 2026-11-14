@@ -665,21 +665,276 @@ function matchRecords(source, target, options) {
     totalTargetRecords: target.length
   };
 }
+
+// src/csv/parseCSV.ts
+import Papa from "papaparse";
+function parseCSV(csvText, options = {}) {
+  const result = Papa.parse(csvText, {
+    header: true,
+    dynamicTyping: false,
+    skipEmptyLines: options.skipEmptyLines ?? true,
+    delimiter: options.delimiter ?? ""
+  });
+  const records = result.data;
+  const headers = result.meta.fields ?? [];
+  const errors = result.errors.map((error) => ({
+    type: error.type,
+    code: error.code,
+    message: error.message,
+    row: error.row
+  }));
+  return {
+    records,
+    headers,
+    errors,
+    rowCount: records.length
+  };
+}
+
+// src/matching/csv/matchCSV.ts
+function matchCSV(sourceCSV, targetCSV, options) {
+  const { sourceParseOptions, targetParseOptions, ...matchingOptions } = options;
+  const sourceResult = parseCSV(sourceCSV, sourceParseOptions);
+  const targetResult = parseCSV(targetCSV, targetParseOptions);
+  const matchingResult = matchRecords(
+    sourceResult.records,
+    targetResult.records,
+    matchingOptions
+  );
+  const sourceRecordNumbers = new Map(
+    sourceResult.records.map((record, index) => [record, index + 1])
+  );
+  const targetRecordNumbers = new Map(
+    targetResult.records.map((record, index) => [record, index + 1])
+  );
+  const matches = matchingResult.matches.map((match) => ({
+    source: match.source,
+    sourceRecordNumber: sourceRecordNumbers.get(match.source),
+    candidates: match.candidates.map((candidate) => ({
+      ...candidate,
+      targetRecordNumber: targetRecordNumbers.get(candidate.record)
+    })),
+    matched: match.matched
+  }));
+  const unmatched = matchingResult.unmatched.map((record) => ({
+    record,
+    sourceRecordNumber: sourceRecordNumbers.get(record)
+  }));
+  return {
+    matches,
+    unmatched,
+    totalSourceRecords: matchingResult.totalSourceRecords,
+    totalTargetRecords: matchingResult.totalTargetRecords,
+    sourceHeaders: sourceResult.headers,
+    targetHeaders: targetResult.headers,
+    parseErrors: {
+      source: sourceResult.errors,
+      target: targetResult.errors
+    }
+  };
+}
+
+// src/matching/csv/exportMatches.ts
+import Papa2 from "papaparse";
+function exportMatches(result, options = {}) {
+  const fields = [
+    "source_record_number",
+    "target_record_number",
+    "matched",
+    "score",
+    "method",
+    ...result.sourceHeaders.map((header) => `source_${header}`),
+    ...result.targetHeaders.map((header) => `target_${header}`)
+  ];
+  const rows = [];
+  for (const match of result.matches) {
+    const candidates = match.candidates.length ? match.candidates : [null];
+    for (const candidate of candidates) {
+      const row = {
+        source_record_number: String(match.sourceRecordNumber),
+        target_record_number: candidate ? String(candidate.targetRecordNumber) : "",
+        matched: String(match.matched),
+        score: candidate ? String(candidate.score) : "",
+        method: candidate?.method ?? ""
+      };
+      for (const header of result.sourceHeaders) {
+        row[`source_${header}`] = match.source[header] ?? "";
+      }
+      for (const header of result.targetHeaders) {
+        row[`target_${header}`] = candidate?.record[header] ?? "";
+      }
+      rows.push(row);
+    }
+  }
+  return Papa2.unparse(
+    { fields, data: rows },
+    { delimiter: options.delimiter ?? "," }
+  );
+}
+
+// src/deduplication/findDuplicates.ts
+function findDuplicatePairs(records, options) {
+  const matchingResult = matchRecords(records, records, {
+    fields: options.fields.map((field) => ({
+      sourceKey: field.key,
+      targetKey: field.key,
+      weight: field.weight
+    })),
+    method: options.method,
+    threshold: options.threshold,
+    topK: Math.max(records.length, 1),
+    normalization: options.normalization,
+    algorithmOptions: options.algorithmOptions
+  });
+  const pairs = [];
+  matchingResult.matches.forEach((match, firstIndex) => {
+    match.candidates.forEach((candidate) => {
+      const secondIndex = records.indexOf(candidate.record);
+      if (secondIndex <= firstIndex) {
+        return;
+      }
+      pairs.push({
+        firstRecordIndex: firstIndex,
+        secondRecordIndex: secondIndex,
+        score: candidate.score,
+        fieldScores: candidate.fieldScores
+      });
+    });
+  });
+  return pairs;
+}
+function createDuplicateGroups(records, pairs) {
+  const connections = records.map(() => []);
+  for (const pair of pairs) {
+    connections[pair.firstRecordIndex].push(pair.secondRecordIndex);
+    connections[pair.secondRecordIndex].push(pair.firstRecordIndex);
+  }
+  const visited = /* @__PURE__ */ new Set();
+  const duplicateGroups = [];
+  const uniqueRecords = [];
+  for (let i = 0; i < records.length; i++) {
+    if (visited.has(i)) {
+      continue;
+    }
+    if (connections[i].length === 0) {
+      visited.add(i);
+      uniqueRecords.push(records[i]);
+      continue;
+    }
+    const groupIndexes = [];
+    const queue = [i];
+    visited.add(i);
+    while (queue.length > 0) {
+      const current = queue.shift();
+      groupIndexes.push(current);
+      for (const neighbor of connections[current]) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+    const groupRecords = groupIndexes.map((index) => records[index]);
+    const groupPairs = pairs.filter(
+      (pair) => groupIndexes.includes(pair.firstRecordIndex) && groupIndexes.includes(pair.secondRecordIndex)
+    );
+    duplicateGroups.push({
+      groupId: duplicateGroups.length + 1,
+      records: groupRecords,
+      duplicatePairs: groupPairs
+    });
+  }
+  const duplicateRecordsCount = duplicateGroups.reduce(
+    (total, group) => total + group.records.length,
+    0
+  );
+  return {
+    duplicateGroups,
+    uniqueRecords,
+    totalRecords: records.length,
+    duplicateGroupsCount: duplicateGroups.length,
+    duplicateRecordsCount,
+    uniqueRecordsCount: uniqueRecords.length
+  };
+}
+function findDuplicates(records, options) {
+  const pairs = findDuplicatePairs(records, options);
+  return createDuplicateGroups(records, pairs);
+}
+
+// src/deduplication/findDuplicatesCSV.ts
+function findDuplicatesCSV(csvText, options) {
+  const parsed = parseCSV(csvText);
+  const result = findDuplicates(parsed.records, options);
+  return {
+    ...result,
+    records: parsed.records,
+    headers: parsed.headers,
+    parseErrors: parsed.errors
+  };
+}
+
+// src/deduplication/exportUniqueCSV.ts
+import Papa3 from "papaparse";
+function exportUniqueCSV(result, options = {}) {
+  const keep = options.keep ?? "most-complete";
+  const duplicateRecords = new Set(
+    result.duplicateGroups.flatMap((group) => group.records)
+  );
+  const selectedRecords = /* @__PURE__ */ new Set();
+  for (const group of result.duplicateGroups) {
+    if (keep === "exclude") {
+      continue;
+    }
+    let selectedRecord = group.records[0];
+    if (keep === "most-complete") {
+      let highestCount = 0;
+      for (const record of group.records) {
+        const count = Object.values(record).filter(
+          (value) => value.trim() !== ""
+        ).length;
+        if (count > highestCount) {
+          highestCount = count;
+          selectedRecord = record;
+        }
+      }
+    }
+    selectedRecords.add(selectedRecord);
+  }
+  const recordsToExport = [];
+  for (const record of result.records) {
+    const isDuplicate = duplicateRecords.has(record);
+    const isSelected = selectedRecords.has(record);
+    if (!isDuplicate || isSelected) {
+      recordsToExport.push(record);
+    }
+  }
+  return Papa3.unparse({
+    fields: result.headers,
+    data: recordsToExport
+  });
+}
 export {
   compareStrings,
   cosineSimilarity,
   damerauLevenshteinDistance,
   damerauLevenshteinSimilarity,
   diceSimilarity,
+  exportMatches,
+  exportUniqueCSV,
+  findDuplicates,
+  findDuplicatesCSV,
   jaccardSimilarity,
   jaroSimilarity,
   jaroWinklerSimilarity,
   levenshteinDistance,
   levenshteinSimilarity,
+  matchCSV,
   matchRecords,
   metaphone,
   metaphoneSimilarity,
   normalizeString,
+  parseCSV,
   soundex,
   soundexSimilarity
 };

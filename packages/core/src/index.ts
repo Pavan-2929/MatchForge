@@ -39,3 +39,35 @@ export type {
   RecordMatch,
   MatchingResult,
 } from "./types/matching.js";
+
+// CSV parser
+export { parseCSV } from "./csv/parseCSV.js";
+export { matchCSV } from "./matching/csv/matchCSV.js";
+export { exportMatches } from "./matching/csv/exportMatches.js";
+
+export type {
+  CSVParseOptions,
+  CSVParseError,
+  CSVParseResult,
+  CSVRecord,
+  CSVMatchOptions,
+  CSVMatchCandidate,
+  CSVRecordMatch,
+  CSVUnmatchedRecord,
+  CSVMatchResult,
+  CSVExportOptions,
+} from "./csv/types.js";
+
+export { findDuplicates } from "./deduplication/findDuplicates.js";
+export { findDuplicatesCSV } from "./deduplication/findDuplicatesCSV.js";
+export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
+
+export type {
+  DuplicateField,
+  DuplicateOptions,
+  DuplicatePair,
+  DuplicateGroup,
+  DuplicateResult,
+  DuplicateCSVResult,
+  UniqueCSVExportOptions,
+} from "./deduplication/types.js";
