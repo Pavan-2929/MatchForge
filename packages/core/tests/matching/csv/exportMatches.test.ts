@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { exportMatches } from "../../src/csv/exportMatches.js";
-import { matchCSV } from "../../src/csv/matchCSV.js";
-import { parseCSV } from "../../src/csv/parseCSV.js";
+import { exportMatches } from "../../../src/matching/csv/exportMatches.js";
+import { matchCSV } from "../../../src/matching/csv/matchCSV.js";
+import { parseCSV } from "../../../src/csv/parseCSV.js";
 
 describe("exportMatches", () => {
   const sourceCSV = `name,email

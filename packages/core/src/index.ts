@@ -40,10 +40,10 @@ export type {
   MatchingResult,
 } from "./types/matching.js";
 
-// CSV utilities
+// CSV parser
 export { parseCSV } from "./csv/parseCSV.js";
-export { matchCSV } from "./csv/matchCSV.js";
-export { exportMatches } from "./csv/exportMatches.js";
+export { matchCSV } from "./matching/csv/matchCSV.js";
+export { exportMatches } from "./matching/csv/exportMatches.js";
 
 export type {
   CSVParseOptions,
