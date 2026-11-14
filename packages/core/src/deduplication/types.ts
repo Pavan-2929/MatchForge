@@ -2,6 +2,7 @@ import type { NormalizeOptions } from "../types/preprocessing.js";
 import type { QGramOptions } from "../types/similarity.js";
 import type { SimilarityMethod } from "../types/matching.js";
 import type { FieldMatchScore } from "../types/matching.js";
+import type { CSVRecord, CSVParseError } from "../csv/types.js";
 
 export interface DuplicateField {
   key: string;
@@ -38,3 +39,14 @@ export interface DuplicateResult<T> {
   duplicateRecordsCount: number;
   uniqueRecordsCount: number;
 }
+
+export interface DuplicateCSVResult extends DuplicateResult<CSVRecord> {
+  records: CSVRecord[];
+  headers: string[];
+  parseErrors: CSVParseError[];
+}
+
+export interface UniqueCSVExportOptions {
+  keep?: "first" | "most-complete" | "exclude"
+}
+
