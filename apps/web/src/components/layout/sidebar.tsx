@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   GitCompareArrows,
   ScanText,
+  CopyCheck,
 } from "lucide-react";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
@@ -38,6 +39,11 @@ const sections = [
         label: "CSV-Record Matching",
         href: "/csv-record-matching",
         icon: FileSpreadsheet,
+      },
+      {
+        label: "Dataset deduplication",
+        href: "/dataset-deduplication",
+        icon: CopyCheck,
       },
     ],
   },
