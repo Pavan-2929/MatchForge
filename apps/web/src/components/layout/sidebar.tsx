@@ -45,6 +45,11 @@ const sections = [
         href: "/dataset-deduplication",
         icon: CopyCheck,
       },
+      {
+        label: "CSV-Dataset deduplication",
+        href: "/csv-dataset-deduplication",
+        icon: FileSpreadsheet,
+      },
     ],
   },
 ];
@@ -86,7 +91,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <nav className="space-y-1">
               {section.links.map((item) => {
                 const Icon = item.icon;
-                const active = pathname === item.href;
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
 
                 return (
                   <Link
