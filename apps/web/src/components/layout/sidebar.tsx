@@ -6,6 +6,7 @@ import {
   BookOpen,
   Code2,
   Database,
+  FileSpreadsheet,
   GitCompareArrows,
   ScanText,
 } from "lucide-react";
@@ -32,6 +33,11 @@ const sections = [
         label: "Record matching",
         href: "/record-matching",
         icon: Database,
+      },
+      {
+        label: "CSV-Record Matching",
+        href: "/csv-record-matching",
+        icon: FileSpreadsheet,
       },
     ],
   },
