@@ -57,3 +57,17 @@ export type {
   CSVMatchResult,
   CSVExportOptions,
 } from "./csv/types.js";
+
+export { findDuplicates } from "./deduplication/findDuplicates.js";
+export { findDuplicatesCSV } from "./deduplication/findDuplicatesCSV.js";
+export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
+
+export type {
+  DuplicateField,
+  DuplicateOptions,
+  DuplicatePair,
+  DuplicateGroup,
+  DuplicateResult,
+  DuplicateCSVResult,
+  UniqueCSVExportOptions,
+} from "./deduplication/types.js";

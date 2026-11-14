@@ -16,4 +16,8 @@ export { parseCSV } from "./csv/parseCSV.js";
 export { matchCSV } from "./csv/matchCSV.js";
 export { exportMatches } from "./csv/exportMatches.js";
 export type { CSVParseOptions, CSVParseError, CSVParseResult, CSVRecord, CSVMatchOptions, CSVMatchCandidate, CSVRecordMatch, CSVUnmatchedRecord, CSVMatchResult, CSVExportOptions, } from "./csv/types.js";
+export { findDuplicates } from "./deduplication/findDuplicates.js";
+export { findDuplicatesCSV } from "./deduplication/findDuplicatesCSV.js";
+export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
+export type { DuplicateField, DuplicateOptions, DuplicatePair, DuplicateGroup, DuplicateResult, DuplicateCSVResult, UniqueCSVExportOptions, } from "./deduplication/types.js";
 //# sourceMappingURL=index.d.ts.map
