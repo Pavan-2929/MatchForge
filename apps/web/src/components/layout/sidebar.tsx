@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   GitCompareArrows,
   ScanText,
+  CopyCheck,
 } from "lucide-react";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
@@ -37,6 +38,16 @@ const sections = [
       {
         label: "CSV-Record Matching",
         href: "/csv-record-matching",
+        icon: FileSpreadsheet,
+      },
+      {
+        label: "Dataset deduplication",
+        href: "/dataset-deduplication",
+        icon: CopyCheck,
+      },
+      {
+        label: "CSV-Dataset deduplication",
+        href: "/csv-dataset-deduplication",
         icon: FileSpreadsheet,
       },
     ],
@@ -80,7 +91,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             <nav className="space-y-1">
               {section.links.map((item) => {
                 const Icon = item.icon;
-                const active = pathname === item.href;
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
 
                 return (
                   <Link
