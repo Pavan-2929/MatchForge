@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchCSV } from "../../src/csv/matchCSV.js";
+import { matchCSV } from "../../../src/matching/csv/matchCSV.js";
 
 describe("matchCSV", () => {
   it("should match records from two CSV files", () => {

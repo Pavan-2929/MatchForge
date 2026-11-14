@@ -691,7 +691,7 @@ function parseCSV(csvText, options = {}) {
   };
 }
 
-// src/csv/matchCSV.ts
+// src/matching/csv/matchCSV.ts
 function matchCSV(sourceCSV, targetCSV, options) {
   const { sourceParseOptions, targetParseOptions, ...matchingOptions } = options;
   const sourceResult = parseCSV(sourceCSV, sourceParseOptions);
@@ -734,7 +734,7 @@ function matchCSV(sourceCSV, targetCSV, options) {
   };
 }
 
-// src/csv/exportMatches.ts
+// src/matching/csv/exportMatches.ts
 import Papa2 from "papaparse";
 function exportMatches(result, options = {}) {
   const fields = [

@@ -1,7 +1,7 @@
-import { parseCSV } from "./parseCSV.js";
-import { matchRecords } from "../matching/matchRecords.js";
+import { parseCSV } from "../../csv/parseCSV.js";
+import { matchRecords } from "../matchRecords.js";
 
-import type { CSVMatchOptions, CSVMatchResult } from "./types.js";
+import type { CSVMatchOptions, CSVMatchResult } from "../../csv/types.js";
 
 export function matchCSV(
   sourceCSV: string,

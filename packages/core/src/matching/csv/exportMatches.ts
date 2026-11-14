@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 
-import type { CSVMatchResult, CSVExportOptions } from "./types.js";
+import type { CSVMatchResult, CSVExportOptions } from "../../csv/types.js";
 
 export function exportMatches(
   result: CSVMatchResult,
