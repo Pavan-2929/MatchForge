@@ -24,4 +24,6 @@ export { generateCandidates } from "./blocking/generateCandidates.js";
 export type { BlockingMethod, BlockingRule, BlockingOptions, CandidatePair, CandidateGenerationStats, CandidateGenerationResult, DuplicateBlockingRule, DuplicateBlockingOptions, } from "./blocking/types.js";
 export { evaluateMatches } from "./evaluation/evaluateMatches.js";
 export type { GroundTruthPair, EvaluationOptions, ConfusionMatrix, EvaluationMetrics, EvaluationResult, } from "./evaluation/types.js";
+export { evaluateBlocking } from "./blocking-evaluation/evaluateBlocking.js";
+export type { BlockingEvaluationOptions, BlockingEvaluationMetrics, BlockingEvaluationResult, } from "./blocking-evaluation/types.js";
 //# sourceMappingURL=index.d.ts.map

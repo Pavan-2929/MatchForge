@@ -189,6 +189,8 @@ export function generateCandidates<S extends object, T extends object>(
   return {
     pairs,
     stats: {
+      totalSourceRecords: source.length,
+      totalTargetRecords: target.length,
       totalPossiblePairs,
       candidatePairs: pairs.length,
       reductionPercentage,

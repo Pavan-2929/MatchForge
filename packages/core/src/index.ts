@@ -95,3 +95,12 @@ export type {
   EvaluationMetrics,
   EvaluationResult,
 } from "./evaluation/types.js";
+
+// Blocking Evaluation
+export { evaluateBlocking } from "./blocking-evaluation/evaluateBlocking.js";
+
+export type {
+  BlockingEvaluationOptions,
+  BlockingEvaluationMetrics,
+  BlockingEvaluationResult,
+} from "./blocking-evaluation/types.js";

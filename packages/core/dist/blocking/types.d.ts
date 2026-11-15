@@ -15,6 +15,8 @@ export interface CandidatePair {
     targetIndex: number;
 }
 export interface CandidateGenerationStats {
+    totalSourceRecords: number;
+    totalTargetRecords: number;
     totalPossiblePairs: number;
     candidatePairs: number;
     reductionPercentage: number;
