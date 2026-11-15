@@ -31,11 +31,18 @@ function getStringValue(
   return value;
 }
 
-function filterValidRecords<T>(records: T[]): T[] {
-  return records.filter(
-    (record) =>
-      record !== null && typeof record === "object" && !Array.isArray(record),
-  );
+function getValidRecords<T>(records: T[]) {
+  return records.flatMap((record, originalIndex) => {
+    if (
+      record === null ||
+      typeof record !== "object" ||
+      Array.isArray(record)
+    ) {
+      return [];
+    }
+
+    return [{ record, originalIndex }];
+  });
 }
 
 export function matchRecords<S extends object, T extends object>(
@@ -47,8 +54,8 @@ export function matchRecords<S extends object, T extends object>(
     throw new TypeError("Source and target must be arrays.");
   }
 
-  source = filterValidRecords(source);
-  target = filterValidRecords(target);
+  const validSource = getValidRecords(source);
+  const validTarget = getValidRecords(target);
 
   const fields = getMatchingFields(options);
 
@@ -69,10 +76,13 @@ export function matchRecords<S extends object, T extends object>(
     throw new Error("topK must be a positive integer.");
   }
 
+  const sourceRecords = validSource.map(({ record }) => record);
+  const targetRecords = validTarget.map(({ record }) => record);
+
   const candidateTargetsBySource = new Map<number, number[]>();
 
   if (blocking) {
-    const result = generateCandidates(source, target, {
+    const result = generateCandidates(sourceRecords, targetRecords, {
       ...blocking,
       normalization: blocking.normalization ?? normalization,
     });
@@ -88,87 +98,92 @@ export function matchRecords<S extends object, T extends object>(
     }
   }
 
-  const allTargetIndexes = target.map((_, index) => index);
+  const allTargetIndexes = targetRecords.map((_, index) => index);
 
-  const matches = source.map((sourceRecord, sourceIndex) => {
-    const candidates: MatchCandidate<T>[] = [];
+  const matches = validSource.map(
+    ({ record: sourceRecord, originalIndex: sourceIndex }, validIndex) => {
+      const candidates: MatchCandidate<T>[] = [];
 
-    const targetIndexes = blocking
-      ? (candidateTargetsBySource.get(sourceIndex) ?? [])
-      : allTargetIndexes;
+      const targetIndexes = blocking
+        ? (candidateTargetsBySource.get(validIndex) ?? [])
+        : allTargetIndexes;
 
-    targetIndexes.forEach((targetIndex) => {
-      const targetRecord = target[targetIndex];
-      const fieldScores: FieldMatchScore[] = [];
+      targetIndexes.forEach((validTargetIndex) => {
+        const targetRecord = targetRecords[validTargetIndex];
+        const targetIndex = validTarget[validTargetIndex].originalIndex;
 
-      for (const field of fields) {
-        const weight = field.weight ?? 1;
+        const fieldScores: FieldMatchScore[] = [];
 
-        if (weight === 0) {
-          continue;
+        for (const field of fields) {
+          const weight = field.weight ?? 1;
+
+          if (weight === 0) {
+            continue;
+          }
+
+          const sourceValue = getStringValue(
+            sourceRecord,
+            field.sourceKey,
+            sourceIndex,
+            "Source",
+          );
+
+          const targetValue = getStringValue(
+            targetRecord,
+            field.targetKey,
+            targetIndex,
+            "Target",
+          );
+
+          if (sourceValue === undefined || targetValue === undefined) {
+            continue;
+          }
+
+          if (sourceValue.trim() === "" || targetValue.trim() === "") {
+            continue;
+          }
+
+          const score = compareStrings(sourceValue, targetValue, {
+            method,
+            normalization,
+            algorithmOptions,
+          });
+
+          fieldScores.push({
+            sourceKey: field.sourceKey,
+            targetKey: field.targetKey,
+            score,
+            weight,
+          });
         }
 
-        const sourceValue = getStringValue(
-          sourceRecord,
-          field.sourceKey,
-          sourceIndex,
-          "Source",
-        );
+        const score = calculateWeightedScore(fieldScores);
 
-        const targetValue = getStringValue(
-          targetRecord,
-          field.targetKey,
+        if (score === null || score < threshold) {
+          return;
+        }
+
+        candidates.push({
+          record: targetRecord,
           targetIndex,
-          "Target",
-        );
-
-        if (sourceValue === undefined || targetValue === undefined) {
-          continue;
-        }
-
-        if (sourceValue.trim() === "" || targetValue.trim() === "") {
-          continue;
-        }
-
-        const score = compareStrings(sourceValue, targetValue, {
-          method,
-          normalization,
-          algorithmOptions,
-        });
-
-        fieldScores.push({
-          sourceKey: field.sourceKey,
-          targetKey: field.targetKey,
           score,
-          weight,
+          method,
+          fieldScores,
         });
-      }
-
-      const score = calculateWeightedScore(fieldScores);
-
-      if (score === null || score < threshold) {
-        return;
-      }
-
-      candidates.push({
-        record: targetRecord,
-        targetIndex,
-        score,
-        method,
-        fieldScores,
       });
-    });
 
-    candidates.sort((a, b) => b.score - a.score);
+      candidates.sort((a, b) => b.score - a.score);
 
-    const topCandidates = candidates.slice(0, topK);
+      const topCandidates = candidates.slice(0, topK);
 
-    return {
-      source: sourceRecord,
-      candidates: topCandidates,
-      matched: topCandidates.length > 0,
-    };
-  });
+      return {
+        source: sourceRecord,
+        sourceIndex,
+        candidates: topCandidates,
+        matched: topCandidates.length > 0,
+      };
+    },
+  );
 
   const unmatched = matches
     .filter((match) => !match.matched)

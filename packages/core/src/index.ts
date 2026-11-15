@@ -84,3 +84,14 @@ export type {
   DuplicateBlockingRule,
   DuplicateBlockingOptions,
 } from "./blocking/types.js";
+
+// Evaluation
+export { evaluateMatches } from "./evaluation/evaluateMatches.js";
+
+export type {
+  GroundTruthPair,
+  EvaluationOptions,
+  ConfusionMatrix,
+  EvaluationMetrics,
+  EvaluationResult,
+} from "./evaluation/types.js";
