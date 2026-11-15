@@ -26,4 +26,8 @@ export { evaluateMatches } from "./evaluation/evaluateMatches.js";
 export type { GroundTruthPair, EvaluationOptions, ConfusionMatrix, EvaluationMetrics, EvaluationResult, } from "./evaluation/types.js";
 export { evaluateBlocking } from "./blocking-evaluation/evaluateBlocking.js";
 export type { BlockingEvaluationOptions, BlockingEvaluationMetrics, BlockingEvaluationResult, } from "./blocking-evaluation/types.js";
+export { evaluateMatchesCSV } from "./evaluation/csv/evaluateMatchesCSV.js";
+export type { CSVEvaluationOptions, CSVEvaluationResult, } from "./evaluation/csv/types.js";
+export { evaluateBlockingCSV } from "./blocking-evaluation/csv/evaluateBlockingCSV.js";
+export type { CSVBlockingEvaluationOptions, CSVBlockingEvaluationResult, } from "./blocking-evaluation/csv/types.js";
 //# sourceMappingURL=index.d.ts.map

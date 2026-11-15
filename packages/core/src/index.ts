@@ -104,3 +104,19 @@ export type {
   BlockingEvaluationMetrics,
   BlockingEvaluationResult,
 } from "./blocking-evaluation/types.js";
+
+// CSV Matching Evaluation
+export { evaluateMatchesCSV } from "./evaluation/csv/evaluateMatchesCSV.js";
+
+export type {
+  CSVEvaluationOptions,
+  CSVEvaluationResult,
+} from "./evaluation/csv/types.js";
+
+// CSV Blocking Evaluation
+export { evaluateBlockingCSV } from "./blocking-evaluation/csv/evaluateBlockingCSV.js";
+
+export type {
+  CSVBlockingEvaluationOptions,
+  CSVBlockingEvaluationResult,
+} from "./blocking-evaluation/csv/types.js";

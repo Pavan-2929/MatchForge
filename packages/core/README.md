@@ -2,9 +2,9 @@
 
 **Smarter String Matching. Better Entity Resolution.**
 
-MatchForge Core is a framework-independent TypeScript library for string similarity, record matching, and dataset deduplication.
+MatchForge Core is a framework-independent TypeScript library for string similarity, record matching, candidate generation, dataset deduplication, and evaluation.
 
-It provides nine similarity algorithms, configurable text preprocessing, weighted multi-field matching, CSV utilities, and duplicate detection for JavaScript records and CSV datasets.
+It provides nine similarity algorithms, configurable text preprocessing, weighted multi-field matching, CSV utilities, blocking strategies, and evaluation metrics for measuring matching and blocking quality.
 
 ## Table of Contents
 
@@ -15,9 +15,28 @@ It provides nine similarity algorithms, configurable text preprocessing, weighte
 - [Text Preprocessing](#text-preprocessing)
 - [String Comparison](#string-comparison)
 - [Record Matching](#record-matching)
+  - [Single-field Matching](#single-field-matching)
+  - [Multi-field Matching](#multi-field-matching)
+  - [Blocking Integration](#blocking-integration)
+  - [Matching Options](#matchingoptions)
+  - [Understanding the Result](#understanding-the-result)
+- [Blocking and Candidate Generation](#blocking-and-candidate-generation)
+  - [Blocking Methods](#blocking-methods)
+  - [Generating Candidates](#generating-candidates)
+  - [Candidate Generation Result](#candidate-generation-result)
 - [CSV Utilities](#csv-utilities)
+  - [Parsing CSV](#parsing-csv)
+  - [Matching CSV Datasets](#matching-csv-datasets)
+  - [Exporting Matching Results](#exporting-matching-results)
 - [Dataset Deduplication](#dataset-deduplication)
+  - [Blocking Integration](#blocking-integration-1)
+  - [Understanding Duplicate Results](#understanding-duplicate-results)
 - [CSV Deduplication](#csv-deduplication)
+- [Matching Evaluation](#matching-evaluation)
+- [Blocking Evaluation](#blocking-evaluation)
+- [CSV Evaluation](#csv-evaluation)
+  - [CSV Matching Evaluation](#csv-matching-evaluation)
+  - [CSV Blocking Evaluation](#csv-blocking-evaluation)
 - [Direct Algorithm Functions](#direct-algorithm-functions)
 - [TypeScript Support](#typescript-support)
 - [License](#license)
@@ -26,43 +45,75 @@ It provides nine similarity algorithms, configurable text preprocessing, weighte
 
 ## Features
 
-**String Similarity**
+### String Similarity
+
 - Nine similarity algorithms.
 - Edit-distance, character-based, q-gram, and phonetic comparisons.
-- Similarity scores between 0 and 1.
+- Similarity scores between `0` and `1`.
 
-**Text Preprocessing**
+### Text Preprocessing
+
 - Lowercase conversion.
 - Whitespace trimming and normalization.
 - Optional punctuation removal.
 - Optional accent and diacritic removal.
 
-**Record Matching**
+### Record Matching
+
 - Match records across two datasets.
 - Single-field and multi-field matching.
 - Weighted field comparisons.
 - Configurable similarity methods and thresholds.
 - Top-K candidate selection.
 - Field-level similarity scores.
+- Optional blocking to reduce the number of record pairs sent to similarity scoring.
 
-**CSV Utilities**
+### Blocking and Candidate Generation
+
+- Generate candidate pairs before similarity comparison.
+- Exact, prefix, and Soundex blocking methods.
+- Multiple blocking rules combined using union (OR) semantics.
+- Configurable prefix length and text normalization.
+- Candidate-pair counts and reduction statistics.
+- Blocking integration with record matching and dataset deduplication.
+
+### Matching Evaluation
+
+- Evaluate matching predictions against labelled ground truth.
+- Confusion matrix: true positives, false positives, false negatives, and true negatives.
+- Precision, recall, F1-score, and accuracy.
+- Evaluation of explicitly labelled pairs only.
+
+### Blocking Evaluation
+
+- Measure how many known matching pairs survive candidate generation.
+- Candidate recall and candidate precision.
+- Reduction ratio and supporting pair counts.
+- Evaluation against explicitly labelled ground-truth pairs.
+
+### CSV Utilities
+
 - Parse CSV text into JavaScript records.
 - Match records directly from two CSV datasets.
 - Export matching results as CSV.
 - Preserve original column information and record numbers.
 - Access CSV parsing errors.
 
-**Dataset Deduplication**
+### Dataset Deduplication
+
 - Detect duplicates within a single dataset.
 - Support multiple matching fields and weights.
 - Group connected duplicate records.
 - Retrieve duplicate pairs and similarity scores.
 - Identify unique records.
+- Optionally use blocking to reduce pairwise comparisons.
 
-**CSV Deduplication**
+### CSV Deduplication and Evaluation
+
 - Detect duplicates directly from CSV text.
 - Export cleaned CSV data.
 - Choose which records to retain using different strategies.
+- Evaluate matching and blocking directly from two CSV inputs.
 
 ---
 
@@ -115,6 +166,60 @@ const result = matchRecords(source, target, {
 });
 
 console.log(result.matches);
+```
+
+### Generate candidates using blocking
+
+```typescript
+import { generateCandidates } from "@matchforge/core";
+
+const source = [
+  { name: "Rahul Sharma" },
+  { name: "Amit Patel" },
+];
+
+const target = [
+  { fullName: "Rahul Sharma" },
+  { fullName: "Rahul Verma" },
+  { fullName: "Pavan Kapadiya" },
+];
+
+const result = generateCandidates(source, target, {
+  rules: [
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "prefix",
+      length: 3,
+    },
+  ],
+});
+
+console.log(result.pairs);
+console.log(result.stats);
+```
+
+### Evaluate matching predictions
+
+```typescript
+import { matchRecords, evaluateMatches } from "@matchforge/core";
+
+const predictions = matchRecords(source, target, {
+  sourceKey: "name",
+  targetKey: "fullName",
+  threshold: 0.8,
+});
+
+const evaluation = evaluateMatches({
+  predictions,
+  groundTruth: [
+    { sourceIndex: 0, targetIndex: 0, isMatch: true },
+    { sourceIndex: 0, targetIndex: 1, isMatch: false },
+  ],
+});
+
+console.log(evaluation.metrics);
+console.log(evaluation.confusionMatrix);
 ```
 
 ### Detect duplicate records
@@ -196,7 +301,7 @@ All options are optional.
 | `removePunctuation` | `boolean` | `false` | Removes Unicode punctuation characters |
 | `removeAccents` | `boolean` | `false` | Removes Unicode diacritical marks |
 
-`compareStrings()` and `matchRecords()` apply normalization through their `normalization` option.
+`compareStrings()`, `matchRecords()`, blocking, and deduplication can use normalization through their `normalization` options.
 
 Direct algorithm functions do not automatically normalize their inputs.
 
@@ -338,6 +443,44 @@ The final score is a weighted average of the available field scores.
 
 Fields with a weight of `0` are ignored. Missing or blank values are skipped for that field comparison.
 
+### Blocking Integration
+
+For large datasets, comparing every source record against every target record can require many similarity calculations. Blocking reduces the number of target records considered for each source record.
+
+Pass a `blocking` configuration to `matchRecords()`. Candidate generation runs first; similarity scoring is then performed only on the generated candidate pairs.
+
+```typescript
+const result = matchRecords(source, target, {
+  fields: [
+    { sourceKey: "name", targetKey: "fullName", weight: 0.7 },
+    { sourceKey: "city", targetKey: "location", weight: 0.3 },
+  ],
+  threshold: 0.75,
+  topK: 2,
+  blocking: {
+    rules: [
+      {
+        sourceKey: "name",
+        targetKey: "fullName",
+        method: "prefix",
+        length: 3,
+      },
+      {
+        sourceKey: "city",
+        targetKey: "location",
+        method: "exact",
+      },
+    ],
+  },
+});
+```
+
+Multiple blocking rules use **OR (union) semantics**: a source-target pair is retained as a candidate if it satisfies at least one rule.
+
+Blocking is a candidate-generation step, not a matching decision. A generated candidate must still pass the configured similarity threshold to appear in the matching result.
+
+See [Blocking and Candidate Generation](#blocking-and-candidate-generation) for the available methods and configuration.
+
 ### MatchingOptions
 
 | Option | Type | Default | Description |
@@ -350,6 +493,7 @@ Fields with a weight of `0` are ignored. Missing or blank values are skipped for
 | `topK` | `number` | `1` | Maximum candidates returned per source record |
 | `normalization` | `NormalizeOptions` | `{}` | Text normalization configuration |
 | `algorithmOptions` | `QGramOptions` | `{}` | Algorithm-specific options |
+| `blocking` | `BlockingOptions` | — | Optional candidate-generation configuration |
 
 The threshold must be between `0` and `1`. `topK` must be a positive integer.
 
@@ -381,12 +525,14 @@ At least one field must have a positive weight. Weights do not need to add up to
 Each match contains:
 
 - `source`: Original source record.
+- `sourceIndex`: Original index of the source record in the input dataset.
 - `candidates`: Ranked target candidates.
 - `matched`: Whether at least one candidate met the threshold.
 
 Each candidate contains:
 
 - `record`: Target record.
+- `targetIndex`: Original index of the target record in the input dataset.
 - `score`: Combined similarity score.
 - `method`: Similarity algorithm used.
 - `fieldScores`: Individual field comparison results.
@@ -394,6 +540,148 @@ Each candidate contains:
 `unmatched` contains source records for which no candidate met the threshold.
 
 Target records are not reserved or consumed. The same target record can match multiple source records.
+
+---
+
+## Blocking and Candidate Generation
+
+Blocking is used to reduce the number of record pairs that need expensive similarity comparisons.
+
+Instead of comparing every source record with every target record, blocking groups records using selected key-generation rules and produces a smaller set of candidate pairs.
+
+Use `generateCandidates()` when you need candidate pairs directly, or configure blocking inside `matchRecords()` and `findDuplicates()`.
+
+### Blocking Methods
+
+MatchForge supports three blocking methods:
+
+| Method | Description | Configuration |
+|---|---|---|
+| `exact` | Compares normalized field values for exact equality | No additional option |
+| `prefix` | Compares the first characters of normalized field values | Optional `length`; defaults to `3` |
+| `soundex` | Compares generated Soundex phonetic codes | No additional option |
+
+All methods can use the `normalization` option.
+
+For prefix blocking, `length` must be a positive integer.
+
+Missing, null, empty, or normalized-to-empty values do not generate blocking keys. Blocking field values must otherwise be strings.
+
+### Generating Candidates
+
+Use `generateCandidates()` to generate candidate pairs between two datasets.
+
+```typescript
+import { generateCandidates } from "@matchforge/core";
+
+const source = [
+  { name: "Rahul Sharma" },
+  { name: "Amit Patel" },
+  { name: "Pavan Kapadiya" },
+];
+
+const target = [
+  { fullName: "Rahul Sharma" },
+  { fullName: "Rahul Verma" },
+  { fullName: "Amit Patel" },
+];
+
+const result = generateCandidates(source, target, {
+  rules: [
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "exact",
+    },
+  ],
+});
+
+console.log(result.pairs);
+console.log(result.stats);
+```
+
+### BlockingOptions
+
+| Option | Type | Description |
+|---|---|---|
+| `rules` | `BlockingRule[]` | One or more candidate-generation rules; at least one is required |
+| `normalization` | `NormalizeOptions` | Optional text normalization applied before generating blocking keys |
+
+### BlockingRule
+
+| Property | Type | Description |
+|---|---|---|
+| `sourceKey` | `string` | Field name in the source record |
+| `targetKey` | `string` | Field name in the target record |
+| `method` | `BlockingMethod` | `exact`, `prefix`, or `soundex` |
+| `length` | `number` | Prefix length; applies only to `prefix` and defaults to `3` |
+
+### Multiple Blocking Rules
+
+Multiple rules are combined using union (OR) semantics.
+
+```typescript
+const result = generateCandidates(source, target, {
+  rules: [
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "prefix",
+      length: 3,
+    },
+    {
+      sourceKey: "email",
+      targetKey: "email",
+      method: "exact",
+    },
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "soundex",
+    },
+  ],
+});
+```
+
+A pair generated by more than one rule appears only once in `pairs`.
+
+### Candidate Generation Result
+
+`generateCandidates()` returns a `CandidateGenerationResult`:
+
+```typescript
+{
+  pairs: [
+    { sourceIndex: 0, targetIndex: 1 },
+  ],
+  stats: {
+    totalSourceRecords: 100,
+    totalTargetRecords: 120,
+    totalPossiblePairs: 12000,
+    candidatePairs: 1500,
+    reductionPercentage: 87.5,
+  },
+}
+```
+
+The example values above are illustrative.
+
+Each candidate pair contains:
+
+- `sourceIndex`: Index of the source record.
+- `targetIndex`: Index of the target record.
+
+The `stats` object contains:
+
+| Property | Description |
+|---|---|
+| `totalSourceRecords` | Number of source records supplied |
+| `totalTargetRecords` | Number of target records supplied |
+| `totalPossiblePairs` | Source record count multiplied by target record count |
+| `candidatePairs` | Number of unique generated candidate pairs |
+| `reductionPercentage` | Percentage of possible pairs removed by blocking, from `0` to `100` |
+
+The reduction percentage is `0` when there are no possible pairs.
 
 ---
 
@@ -476,6 +764,8 @@ It also returns:
 
 You can customize parsing separately for each input using `sourceParseOptions` and `targetParseOptions`.
 
+Blocking can also be supplied through the matching options passed to `matchCSV()`.
+
 ### Exporting Matching Results
 
 Use `exportMatches()` to convert CSV matching results into a CSV string.
@@ -548,6 +838,7 @@ console.log(result.uniqueRecords);
 | `threshold` | `number` | `0.7` | Minimum score required to identify a duplicate |
 | `normalization` | `NormalizeOptions` | `{}` | Text normalization configuration |
 | `algorithmOptions` | `QGramOptions` | `{}` | Algorithm-specific options |
+| `blocking` | `DuplicateBlockingOptions` | — | Optional candidate-generation configuration |
 
 ### DuplicateField
 
@@ -555,6 +846,37 @@ console.log(result.uniqueRecords);
 |---|---|---|---|
 | `key` | `string` | Required | Field name to compare |
 | `weight` | `number` | `1` | Relative influence of the field |
+
+### Blocking Integration
+
+For larger datasets, optional blocking can reduce the number of record pairs that need similarity comparisons.
+
+Unlike cross-dataset blocking rules, duplicate blocking uses one field key because records are compared against other records in the same dataset.
+
+```typescript
+const result = findDuplicates(customers, {
+  fields: [
+    { key: "name", weight: 0.6 },
+    { key: "email", weight: 0.4 },
+  ],
+  threshold: 0.85,
+  blocking: {
+    rules: [
+      {
+        key: "name",
+        method: "prefix",
+        length: 3,
+      },
+      {
+        key: "email",
+        method: "exact",
+      },
+    ],
+  },
+});
+```
+
+Multiple duplicate-blocking rules also use union (OR) semantics. A record pair is considered for similarity scoring if it is generated by at least one rule.
 
 ### Understanding Duplicate Results
 
@@ -592,7 +914,7 @@ For example, if record A matches B and record B matches C, all three records bel
 
 `uniqueRecords` contains records that do not belong to any detected duplicate group.
 
-**Performance note:** Duplicate detection compares records pairwise. Its comparison cost grows approximately quadratically with the dataset size.
+**Performance note:** Without blocking, duplicate detection compares records pairwise. Its comparison cost grows approximately quadratically with the dataset size. Blocking can reduce the number of pairs sent to similarity scoring, but its effectiveness depends on the selected rules and data.
 
 ---
 
@@ -630,6 +952,8 @@ The result extends the regular duplicate detection result with:
 | `records` | Original parsed CSV records |
 | `headers` | Original CSV column names |
 | `parseErrors` | CSV parsing errors |
+
+The same duplicate blocking configuration can be supplied through the `blocking` option.
 
 ### Exporting a Clean CSV
 
@@ -702,6 +1026,326 @@ The exported CSV preserves the original column headers and the relative order of
 
 ---
 
+## Matching Evaluation
+
+Use `evaluateMatches()` to measure the quality of matching predictions against labelled ground truth.
+
+The evaluator accepts the result of `matchRecords()` and a list of labelled source-target pairs.
+
+### GroundTruthPair
+
+Each ground-truth pair identifies a source record, a target record, and whether the pair represents a true match.
+
+```typescript
+const groundTruth = [
+  { sourceIndex: 0, targetIndex: 0, isMatch: true },
+  { sourceIndex: 0, targetIndex: 1, isMatch: false },
+  { sourceIndex: 1, targetIndex: 0, isMatch: false },
+  { sourceIndex: 1, targetIndex: 1, isMatch: true },
+];
+```
+
+Indexes are zero-based indexes into the original source and target datasets.
+
+### Evaluating Matching Results
+
+```typescript
+import { matchRecords, evaluateMatches } from "@matchforge/core";
+
+const predictions = matchRecords(source, target, {
+  sourceKey: "name",
+  targetKey: "fullName",
+  method: "jaro-winkler",
+  threshold: 0.8,
+  topK: 1,
+});
+
+const evaluation = evaluateMatches({
+  predictions,
+  groundTruth,
+});
+
+console.log(evaluation.confusionMatrix);
+console.log(evaluation.metrics);
+```
+
+### EvaluationOptions
+
+| Option | Type | Description |
+|---|---|---|
+| `predictions` | `MatchingResult` | Matching output returned by `matchRecords()` |
+| `groundTruth` | `GroundTruthPair[]` | Labelled source-target pairs used for evaluation |
+
+### Confusion Matrix
+
+The evaluator compares the predicted candidate pairs with the explicitly labelled pairs.
+
+| Outcome | Meaning |
+|---|---|
+| True Positive (TP) | A labelled match that was predicted |
+| False Positive (FP) | A labelled non-match that was predicted |
+| False Negative (FN) | A labelled match that was not predicted |
+| True Negative (TN) | A labelled non-match that was not predicted |
+
+### Evaluation Metrics
+
+| Metric | Description |
+|---|---|
+| Precision | Proportion of predicted labelled matches that are correct |
+| Recall | Proportion of labelled true matches that were predicted |
+| F1-score | Harmonic mean of precision and recall |
+| Accuracy | Proportion of correctly predicted labelled pairs |
+
+All metrics are returned as decimal values between `0` and `1`. When a metric's denominator is zero, the implementation returns `0`.
+
+**Important:** Only explicitly labelled ground-truth pairs are evaluated. Unlabelled pairs are not assumed to be non-matches. A genuine pair that is absent from the matching candidates is counted as a false negative if it is labelled as a match.
+
+The matching evaluator considers the candidates returned by `matchRecords()`. Therefore, the matching threshold and `topK` settings affect the predictions being evaluated.
+
+### EvaluationResult
+
+The result contains:
+
+```typescript
+{
+  confusionMatrix: {
+    truePositives: 0,
+    falsePositives: 0,
+    falseNegatives: 0,
+    trueNegatives: 0,
+  },
+  metrics: {
+    precision: 0,
+    recall: 0,
+    f1Score: 0,
+    accuracy: 0,
+  },
+  totalEvaluatedPairs: 0,
+}
+```
+
+---
+
+## Blocking Evaluation
+
+Use `evaluateBlocking()` to measure the quality of a candidate-generation strategy before applying similarity-based matching.
+
+Blocking evaluation compares generated candidate pairs with labelled ground truth. It helps determine whether blocking removes enough comparisons while retaining genuine matching pairs.
+
+### Evaluating Candidate Generation
+
+```typescript
+import {
+  generateCandidates,
+  evaluateBlocking,
+} from "@matchforge/core";
+
+const candidates = generateCandidates(source, target, {
+  rules: [
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "prefix",
+      length: 3,
+    },
+  ],
+});
+
+const evaluation = evaluateBlocking({
+  candidates,
+  groundTruth,
+});
+
+console.log(evaluation.metrics);
+console.log(evaluation.totalCandidatePairs);
+```
+
+### BlockingEvaluationOptions
+
+| Option | Type | Description |
+|---|---|---|
+| `candidates` | `CandidateGenerationResult` | Output returned by `generateCandidates()` |
+| `groundTruth` | `GroundTruthPair[]` | Labelled source-target pairs used for evaluation |
+
+### Blocking Evaluation Metrics
+
+| Metric | Description |
+|---|---|
+| Candidate Recall | Fraction of all labelled true pairs retained by blocking |
+| Candidate Precision | Fraction of labelled candidate pairs that are true matches |
+| Reduction Ratio | Fraction of all possible pairs eliminated by blocking |
+
+The metrics are returned as decimal values between `0` and `1`.
+
+Conceptually:
+
+- **Candidate Recall** = true candidate pairs / all labelled true pairs.
+- **Candidate Precision** = true candidate pairs / labelled candidate pairs.
+- **Reduction Ratio** = 1 − candidate pairs / total possible pairs.
+
+When a denominator is zero, the corresponding metric is `0`.
+
+**Important:** Candidate precision is calculated using labelled candidate pairs. Unlabelled candidate pairs are not automatically treated as false positives. With sparse ground truth, candidate precision may not represent the precision across every generated candidate pair.
+
+### BlockingEvaluationResult
+
+The result contains:
+
+| Property | Description |
+|---|---|
+| `metrics` | Candidate recall, candidate precision, and reduction ratio |
+| `totalPossiblePairs` | Total possible source-target combinations |
+| `totalCandidatePairs` | Number of generated candidate pairs |
+| `totalEvaluatedPairs` | Number of ground-truth pairs supplied |
+| `totalLabelledCandidatePairs` | Number of labelled pairs that were generated as candidates |
+| `trueCandidatePairs` | Number of labelled true matches retained as candidates |
+| `totalTruePairs` | Number of labelled true matches |
+
+Blocking evaluation is useful for comparing blocking configurations before choosing one for a matching workflow.
+
+---
+
+## CSV Evaluation
+
+MatchForge provides CSV wrappers for both matching evaluation and blocking evaluation. These functions parse the input CSV datasets, run the corresponding existing record-level workflow, evaluate the results, and return CSV metadata.
+
+Both functions accept separate parsing options for the source and target CSV inputs.
+
+### CSV Matching Evaluation
+
+Use `evaluateMatchesCSV()` to evaluate matching predictions directly from two CSV strings.
+
+```typescript
+import { evaluateMatchesCSV } from "@matchforge/core";
+
+const sourceCSV = `name
+Rahul Sharma
+Amit Patel`;
+
+const targetCSV = `fullName
+Rahul Sharma
+Amit Shah`;
+
+const result = evaluateMatchesCSV(sourceCSV, targetCSV, {
+  sourceKey: "name",
+  targetKey: "fullName",
+  method: "jaro-winkler",
+  threshold: 0.8,
+  topK: 1,
+  groundTruth: [
+    { sourceIndex: 0, targetIndex: 0, isMatch: true },
+    { sourceIndex: 0, targetIndex: 1, isMatch: false },
+    { sourceIndex: 1, targetIndex: 0, isMatch: false },
+    { sourceIndex: 1, targetIndex: 1, isMatch: false },
+  ],
+});
+
+console.log(result.metrics);
+console.log(result.confusionMatrix);
+console.log(result.sourceHeaders);
+console.log(result.targetHeaders);
+console.log(result.parseErrors);
+```
+
+`evaluateMatchesCSV()` uses the same matching configuration as `matchRecords()`, with the following additional options:
+
+| Option | Type | Description |
+|---|---|---|
+| `groundTruth` | `GroundTruthPair[]` | Labelled source-target pairs used for evaluation |
+| `sourceParseOptions` | `CSVParseOptions` | Parsing configuration for the source CSV |
+| `targetParseOptions` | `CSVParseOptions` | Parsing configuration for the target CSV |
+
+The result includes the complete `EvaluationResult` plus:
+
+- `sourceHeaders`: Source CSV column names.
+- `targetHeaders`: Target CSV column names.
+- `parseErrors`: Parsing errors for the source and target CSV inputs.
+
+### CSV Blocking Evaluation
+
+Use `evaluateBlockingCSV()` to evaluate candidate generation directly from two CSV strings.
+
+```typescript
+import { evaluateBlockingCSV } from "@matchforge/core";
+
+const sourceCSV = `name
+Rahul Sharma
+Amit Patel`;
+
+const targetCSV = `fullName
+Rahul Sharma
+Rahul Verma`;
+
+const result = evaluateBlockingCSV(sourceCSV, targetCSV, {
+  rules: [
+    {
+      sourceKey: "name",
+      targetKey: "fullName",
+      method: "prefix",
+      length: 3,
+    },
+  ],
+  groundTruth: [
+    { sourceIndex: 0, targetIndex: 0, isMatch: true },
+    { sourceIndex: 0, targetIndex: 1, isMatch: false },
+    { sourceIndex: 1, targetIndex: 0, isMatch: false },
+    { sourceIndex: 1, targetIndex: 1, isMatch: false },
+  ],
+});
+
+console.log(result.metrics);
+console.log(result.totalCandidatePairs);
+console.log(result.sourceHeaders);
+console.log(result.targetHeaders);
+console.log(result.parseErrors);
+```
+
+`evaluateBlockingCSV()` uses the same blocking configuration as `generateCandidates()`, with the following additional options:
+
+| Option | Type | Description |
+|---|---|---|
+| `groundTruth` | `GroundTruthPair[]` | Labelled source-target pairs used for evaluation |
+| `sourceParseOptions` | `CSVParseOptions` | Parsing configuration for the source CSV |
+| `targetParseOptions` | `CSVParseOptions` | Parsing configuration for the target CSV |
+
+The result includes the complete `BlockingEvaluationResult` plus:
+
+- `sourceHeaders`: Source CSV column names.
+- `targetHeaders`: Target CSV column names.
+- `parseErrors`: Parsing errors for the source and target CSV inputs.
+
+### Ground-Truth Indexing for CSV
+
+For both CSV evaluation wrappers, ground-truth indexes refer to the parsed data records:
+
+- The header row is not included.
+- Indexes start at `0`.
+- Empty lines skipped by the parser are not counted as records.
+- Indexes are not physical line numbers in the CSV file.
+
+For example, in this CSV:
+
+```csv
+name,email
+Rahul,rahul@example.com
+Amit,amit@example.com
+```
+
+The Rahul record has index `0`, and the Amit record has index `1`.
+
+### CSV Parsing Errors
+
+The wrappers return parser errors in `parseErrors` rather than discarding them.
+
+```typescript
+result.parseErrors.source;
+result.parseErrors.target;
+```
+
+A parsing error does not automatically mean the wrapper throws an exception. The parsed records are still passed to the underlying workflow. Check the returned errors when validating CSV input quality.
+
+---
+
 ## Direct Algorithm Functions
 
 Individual algorithms are also exported for use without the matching engine.
@@ -743,17 +1387,31 @@ MatchForge Core is written in TypeScript and includes declaration files.
 Public types can be imported directly:
 
 ```typescript
-import {
-  type SimilarityMethod,
-  type NormalizeOptions,
-  type QGramOptions,
-  type CompareOptions,
-  type MatchingOptions,
-  type MatchingResult,
-  type DuplicateOptions,
-  type DuplicateResult,
-  type DuplicateCSVResult,
-  type UniqueCSVExportOptions,
+import type {
+  SimilarityMethod,
+  NormalizeOptions,
+  QGramOptions,
+  CompareOptions,
+  MatchingOptions,
+  MatchingResult,
+  BlockingMethod,
+  BlockingRule,
+  BlockingOptions,
+  CandidatePair,
+  CandidateGenerationStats,
+  CandidateGenerationResult,
+  GroundTruthPair,
+  EvaluationOptions,
+  ConfusionMatrix,
+  EvaluationMetrics,
+  EvaluationResult,
+  BlockingEvaluationOptions,
+  BlockingEvaluationMetrics,
+  BlockingEvaluationResult,
+  CSVEvaluationOptions,
+  CSVEvaluationResult,
+  CSVBlockingEvaluationOptions,
+  CSVBlockingEvaluationResult,
 } from "@matchforge/core";
 ```
 
@@ -774,8 +1432,14 @@ Additional exported types include:
 - `CSVMatchResult`
 - `CSVExportOptions`
 - `DuplicateField`
+- `DuplicateOptions`
 - `DuplicatePair`
 - `DuplicateGroup`
+- `DuplicateResult`
+- `DuplicateCSVResult`
+- `UniqueCSVExportOptions`
+- `DuplicateBlockingRule`
+- `DuplicateBlockingOptions`
 
 ---
 

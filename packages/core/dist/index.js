@@ -1318,6 +1318,66 @@ function evaluateBlocking(options) {
     totalTruePairs
   };
 }
+
+// src/evaluation/csv/evaluateMatchesCSV.ts
+function evaluateMatchesCSV(sourceCSV, targetCSV, options) {
+  const {
+    groundTruth,
+    sourceParseOptions,
+    targetParseOptions,
+    ...matchingOptions
+  } = options;
+  const sourceResult = parseCSV(sourceCSV, sourceParseOptions);
+  const targetResult = parseCSV(targetCSV, targetParseOptions);
+  const predictions = matchRecords(
+    sourceResult.records,
+    targetResult.records,
+    matchingOptions
+  );
+  const evaluation = evaluateMatches({
+    predictions,
+    groundTruth
+  });
+  return {
+    ...evaluation,
+    sourceHeaders: sourceResult.headers,
+    targetHeaders: targetResult.headers,
+    parseErrors: {
+      source: sourceResult.errors,
+      target: targetResult.errors
+    }
+  };
+}
+
+// src/blocking-evaluation/csv/evaluateBlockingCSV.ts
+function evaluateBlockingCSV(sourceCSV, targetCSV, options) {
+  const {
+    groundTruth,
+    sourceParseOptions,
+    targetParseOptions,
+    ...blockingOptions
+  } = options;
+  const sourceResult = parseCSV(sourceCSV, sourceParseOptions);
+  const targetResult = parseCSV(targetCSV, targetParseOptions);
+  const candidates = generateCandidates(
+    sourceResult.records,
+    targetResult.records,
+    blockingOptions
+  );
+  const evaluation = evaluateBlocking({
+    candidates,
+    groundTruth
+  });
+  return {
+    ...evaluation,
+    sourceHeaders: sourceResult.headers,
+    targetHeaders: targetResult.headers,
+    parseErrors: {
+      source: sourceResult.errors,
+      target: targetResult.errors
+    }
+  };
+}
 export {
   compareStrings,
   cosineSimilarity,
@@ -1325,7 +1385,9 @@ export {
   damerauLevenshteinSimilarity,
   diceSimilarity,
   evaluateBlocking,
+  evaluateBlockingCSV,
   evaluateMatches,
+  evaluateMatchesCSV,
   exportMatches,
   exportUniqueCSV,
   findDuplicates,
