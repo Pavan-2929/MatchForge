@@ -66,4 +66,24 @@ describe("findDuplicateCSV", () => {
     expect(result.uniqueRecords).toHaveLength(0);
     expect(result.totalRecords).toBe(0);
   });
+
+  it("should support blocking during CSV deduplication", () => {
+    const csv = `name,city
+Rahul Sharma,Delhi
+Rahul S.,Delhi
+Rahul Sharma,Mumbai`;
+
+    const result = findDuplicatesCSV(csv, {
+      fields: [{ key: "name" }],
+      threshold: 0.7,
+      blocking: {
+        rules: [{ key: "city", method: "exact" }],
+      },
+    });
+
+    expect(result.duplicateGroups).toHaveLength(1);
+    expect(result.duplicateGroups[0].records).toHaveLength(2);
+    expect(result.uniqueRecords).toHaveLength(1);
+    expect(result.headers).toEqual(["name", "city"]);
+  });
 });

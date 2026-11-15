@@ -1,6 +1,7 @@
 import { compareStrings } from "./compareStrings.js";
 import { getMatchingFields } from "./getMatchingFields.js";
 import { calculateWeightedScore } from "./calculateWeightedScore.js";
+import { generateCandidates } from "../blocking/generateCandidates.js";
 
 import type {
   MatchingOptions,
@@ -57,6 +58,7 @@ export function matchRecords<S extends object, T extends object>(
     topK = 1,
     normalization = {},
     algorithmOptions = {},
+    blocking,
   } = options;
 
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
@@ -67,10 +69,36 @@ export function matchRecords<S extends object, T extends object>(
     throw new Error("topK must be a positive integer.");
   }
 
+  const candidateTargetsBySource = new Map<number, number[]>();
+
+  if (blocking) {
+    const result = generateCandidates(source, target, {
+      ...blocking,
+      normalization: blocking.normalization ?? normalization,
+    });
+
+    for (const pair of result.pairs) {
+      const indexes = candidateTargetsBySource.get(pair.sourceIndex);
+
+      if (indexes) {
+        indexes.push(pair.targetIndex);
+      } else {
+        candidateTargetsBySource.set(pair.sourceIndex, [pair.targetIndex]);
+      }
+    }
+  }
+
+  const allTargetIndexes = target.map((_, index) => index);
+
   const matches = source.map((sourceRecord, sourceIndex) => {
     const candidates: MatchCandidate<T>[] = [];
 
-    target.forEach((targetRecord, targetIndex) => {
+    const targetIndexes = blocking
+      ? (candidateTargetsBySource.get(sourceIndex) ?? [])
+      : allTargetIndexes;
+
+    targetIndexes.forEach((targetIndex) => {
+      const targetRecord = target[targetIndex];
       const fieldScores: FieldMatchScore[] = [];
 
       for (const field of fields) {
@@ -124,6 +152,7 @@ export function matchRecords<S extends object, T extends object>(
 
       candidates.push({
         record: targetRecord,
+        targetIndex,
         score,
         method,
         fieldScores,

@@ -71,3 +71,16 @@ export type {
   DuplicateCSVResult,
   UniqueCSVExportOptions,
 } from "./deduplication/types.js";
+
+export { generateCandidates } from "./blocking/generateCandidates.js";
+
+export type {
+  BlockingMethod,
+  BlockingRule,
+  BlockingOptions,
+  CandidatePair,
+  CandidateGenerationStats,
+  CandidateGenerationResult,
+  DuplicateBlockingRule,
+  DuplicateBlockingOptions,
+} from "./blocking/types.js";

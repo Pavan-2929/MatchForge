@@ -86,4 +86,103 @@ describe("findDuplicates", () => {
     expect(result.duplicateGroups[0].records).toHaveLength(3);
     expect(result.uniqueRecords).toEqual([records[3]]);
   });
+
+  it("uses blocking to restrict duplicate comparisons", () => {
+    const records = [
+      { name: "Rahul Sharma", city: "Delhi" },
+      { name: "Rahul S.", city: "Delhi" },
+      { name: "Rahul Sharma", city: "Mumbai" },
+    ];
+
+    const result = findDuplicates(records, {
+      fields: [{ key: "name" }],
+      method: "jaro-winkler",
+      threshold: 0.7,
+      blocking: {
+        rules: [{ key: "city", method: "exact" }],
+      },
+    });
+
+    expect(result.duplicateGroups).toHaveLength(1);
+    expect(result.duplicateGroups[0].records).toEqual([records[0], records[1]]);
+
+    expect(result.duplicateGroups[0].duplicatePairs).toHaveLength(1);
+    expect(result.uniqueRecords).toEqual([records[2]]);
+  });
+
+  it("preserves correct indices when the same object reference appears multiple times", () => {
+    const customer = { name: "Rahul Sharma" };
+    const records = [customer, customer];
+
+    const result = findDuplicates(records, {
+      fields: [{ key: "name" }],
+      method: "jaro-winkler",
+      threshold: 0.9,
+    });
+
+    expect(result.duplicateGroups).toHaveLength(1);
+    expect(result.duplicateGroups[0].records).toHaveLength(2);
+
+    expect(result.duplicateGroups[0].duplicatePairs).toEqual([
+      expect.objectContaining({
+        firstRecordIndex: 0,
+        secondRecordIndex: 1,
+      }),
+    ]);
+  });
+
+  it("should support multiple blocking rules", () => {
+    const records = [
+      { name: "Rahul Sharma", city: "Delhi", email: "rahul@gmail.com" },
+      { name: "Rahul Sharma", city: "Delhi", email: "other@gmail.com" },
+      { name: "Rahul Sharma", city: "Mumbai", email: "other@gmail.com" },
+      { name: "Rahul Sharma", city: "Pune", email: "unique@gmail.com" },
+    ];
+
+    const result = findDuplicates(records, {
+      fields: [{ key: "name" }],
+      threshold: 0.8,
+      blocking: {
+        rules: [
+          { key: "city", method: "exact" },
+          { key: "email", method: "exact" },
+        ],
+      },
+    });
+
+    expect(result.duplicateGroups).toHaveLength(1);
+    expect(result.duplicateGroups[0].records).toHaveLength(3);
+    expect(result.duplicateGroups[0].duplicatePairs).toHaveLength(2);
+    expect(result.uniqueRecords).toEqual([records[3]]);
+  });
+
+  it("should keep records unique when blocking generates no candidates", () => {
+    const records = [
+      { name: "Rahul Sharma", city: "Delhi" },
+      { name: "Rahul Sharma", city: "Mumbai" },
+      { name: "Rahul Sharma", city: "Pune" },
+    ];
+
+    const result = findDuplicates(records, {
+      fields: [{ key: "name" }],
+      threshold: 0.5,
+      blocking: {
+        rules: [{ key: "city", method: "exact" }],
+      },
+    });
+
+    expect(result.duplicateGroups).toHaveLength(0);
+    expect(result.uniqueRecords).toEqual(records);
+  });
+
+  it("should reject invalid records instead of shifting indices", () => {
+    const records = [{ name: "Rahul Sharma" }, null, { name: "Rahul Sharma" }];
+
+    expect(() =>
+      findDuplicates(records as { name: string }[], {
+        fields: [{ key: "name" }],
+        threshold: 0.9,
+      }),
+    ).toThrow("Record at index 1 must be a non-array object.");
+  });
 });
