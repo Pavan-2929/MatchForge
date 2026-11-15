@@ -3,6 +3,7 @@ import type { QGramOptions } from "../types/similarity.js";
 import type { SimilarityMethod } from "../types/matching.js";
 import type { FieldMatchScore } from "../types/matching.js";
 import type { CSVRecord, CSVParseError } from "../csv/types.js";
+import type { DuplicateBlockingOptions } from "../blocking/types.js";
 
 export interface DuplicateField {
   key: string;
@@ -15,6 +16,7 @@ export interface DuplicateOptions {
   threshold?: number;
   normalization?: NormalizeOptions;
   algorithmOptions?: QGramOptions;
+  blocking?: DuplicateBlockingOptions;
 }
 
 export interface DuplicatePair {
@@ -49,4 +51,5 @@ export interface DuplicateCSVResult extends DuplicateResult<CSVRecord> {
 export interface UniqueCSVExportOptions {
   keep?: "first" | "most-complete" | "exclude"
 }
+
 

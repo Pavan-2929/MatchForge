@@ -20,4 +20,6 @@ export { findDuplicates } from "./deduplication/findDuplicates.js";
 export { findDuplicatesCSV } from "./deduplication/findDuplicatesCSV.js";
 export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
 export type { DuplicateField, DuplicateOptions, DuplicatePair, DuplicateGroup, DuplicateResult, DuplicateCSVResult, UniqueCSVExportOptions, } from "./deduplication/types.js";
+export { generateCandidates } from "./blocking/generateCandidates.js";
+export type { BlockingMethod, BlockingRule, BlockingOptions, CandidatePair, CandidateGenerationStats, CandidateGenerationResult, DuplicateBlockingRule, DuplicateBlockingOptions, } from "./blocking/types.js";
 //# sourceMappingURL=index.d.ts.map

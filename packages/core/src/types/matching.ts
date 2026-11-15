@@ -1,68 +1,71 @@
-import type { NormalizeOptions } from "../types/preprocessing.js";
-import type { QGramOptions } from "./similarity.js";
+  import type { NormalizeOptions } from "../types/preprocessing.js";
+  import type { QGramOptions } from "./similarity.js";
+  import type { BlockingOptions } from "../blocking/types.js";
 
-export type SimilarityMethod =
-  | "levenshtein"
-  | "damerau-levenshtein"
-  | "jaro"
-  | "jaro-winkler"
-  | "jaccard"
-  | "dice"
-  | "cosine"
-  | "soundex"
-  | "metaphone";
+  export type SimilarityMethod =
+    | "levenshtein"
+    | "damerau-levenshtein"
+    | "jaro"
+    | "jaro-winkler"
+    | "jaccard"
+    | "dice"
+    | "cosine"
+    | "soundex"
+    | "metaphone";
 
-export interface FieldMatchScore {
-  sourceKey: string;
-  targetKey: string;
-  score: number;
-  weight: number;
-}
+  export interface FieldMatchScore {
+    sourceKey: string;
+    targetKey: string;
+    score: number;
+    weight: number;
+  }
 
-export interface MatchingField {
-  sourceKey: string;
-  targetKey: string;
-  weight?: number;
-}
+  export interface MatchingField {
+    sourceKey: string;
+    targetKey: string;
+    weight?: number;
+  }
 
-interface CommonMatchingOptions {
-  method?: SimilarityMethod;
-  threshold?: number;
-  topK?: number;
-  normalization?: NormalizeOptions;
-  algorithmOptions?: QGramOptions;
-}
+  interface CommonMatchingOptions {
+    method?: SimilarityMethod;
+    threshold?: number;
+    topK?: number;
+    normalization?: NormalizeOptions;
+    algorithmOptions?: QGramOptions;
+    blocking?: BlockingOptions;
+  }
 
-export type MatchingOptions = CommonMatchingOptions &
-  (
-    | {
-        fields: MatchingField[];
-        sourceKey?: never;
-        targetKey?: never;
-      }
-    | {
-        sourceKey: string;
-        targetKey: string;
-        fields?: never;
-      }
-  );
+  export type MatchingOptions = CommonMatchingOptions &
+    (
+      | {
+          fields: MatchingField[];
+          sourceKey?: never;
+          targetKey?: never;
+        }
+      | {
+          sourceKey: string;
+          targetKey: string;
+          fields?: never;
+        }
+    );
 
-export interface MatchCandidate<T> {
-  record: T;
-  score: number;
-  method: SimilarityMethod;
-  fieldScores: FieldMatchScore[];
-}
+  export interface MatchCandidate<T> {
+    record: T;
+    targetIndex: number;
+    score: number;
+    method: SimilarityMethod;
+    fieldScores: FieldMatchScore[];
+  }
 
-export interface RecordMatch<S, T> {
-  source: S;
-  candidates: MatchCandidate<T>[];
-  matched: boolean;
-}
+  export interface RecordMatch<S, T> {
+    source: S;
+    candidates: MatchCandidate<T>[];
+    matched: boolean;
+  }
 
-export interface MatchingResult<S, T> {
-  matches: RecordMatch<S, T>[];
-  unmatched: S[];
-  totalSourceRecords: number;
-  totalTargetRecords: number;
-}
+  export interface MatchingResult<S, T> {
+    matches: RecordMatch<S, T>[];
+    unmatched: S[];
+    totalSourceRecords: number;
+    totalTargetRecords: number;
+  }

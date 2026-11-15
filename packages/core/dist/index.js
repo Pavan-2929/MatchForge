@@ -561,6 +561,130 @@ function calculateWeightedScore(fieldScores) {
   return weightedSum / totalWeight;
 }
 
+// src/blocking/generateCandidates.ts
+function getBlockingKey(record, key, index, recordType, rule, normalization) {
+  const value = record[key];
+  if (value === void 0 || value === null || value === "") {
+    return void 0;
+  }
+  if (typeof value !== "string") {
+    throw new Error(
+      `${recordType} record at index ${index} must have a string value for "${key}".`
+    );
+  }
+  const normalized = normalizeString(value, normalization);
+  if (normalized === "") {
+    return void 0;
+  }
+  let blockingKey;
+  switch (rule.method) {
+    case "exact":
+      blockingKey = normalized;
+      break;
+    case "prefix": {
+      const length = rule.length ?? 3;
+      if (!Number.isInteger(length) || length < 1) {
+        throw new Error("Prefix blocking length must be a positive integer.");
+      }
+      blockingKey = normalized.slice(0, length);
+      break;
+    }
+    case "soundex":
+      blockingKey = soundex(normalized);
+      break;
+    default:
+      throw new Error(`Unsupported blocking method: ${rule.method}`);
+  }
+  return blockingKey || void 0;
+}
+function validateRule(rule) {
+  if (!rule.sourceKey || !rule.targetKey) {
+    throw new Error("Each blocking rule must define sourceKey and targetKey.");
+  }
+  const supportedMethods = ["exact", "prefix", "soundex"];
+  if (!supportedMethods.includes(rule.method)) {
+    throw new Error(`Unsupported blocking method: ${rule.method}`);
+  }
+  if (rule.method === "prefix" && rule.length !== void 0 && (!Number.isInteger(rule.length) || rule.length < 1)) {
+    throw new Error("Prefix blocking length must be a positive integer.");
+  }
+}
+function generateCandidates(source, target, options) {
+  if (!Array.isArray(source) || !Array.isArray(target)) {
+    throw new TypeError("Source and target must be arrays.");
+  }
+  if (!options || !Array.isArray(options.rules) || options.rules.length === 0) {
+    throw new Error("At least one blocking rule is required.");
+  }
+  options.rules.forEach(validateRule);
+  const pairMap = /* @__PURE__ */ new Map();
+  for (const rule of options.rules) {
+    const targetBuckets = /* @__PURE__ */ new Map();
+    target.forEach((record, targetIndex) => {
+      if (record === null || typeof record !== "object" || Array.isArray(record)) {
+        return;
+      }
+      const key = getBlockingKey(
+        record,
+        rule.targetKey,
+        targetIndex,
+        "Target",
+        rule,
+        options.normalization
+      );
+      if (key === void 0) {
+        return;
+      }
+      const bucket = targetBuckets.get(key);
+      if (bucket) {
+        bucket.push(targetIndex);
+      } else {
+        targetBuckets.set(key, [targetIndex]);
+      }
+    });
+    source.forEach((record, sourceIndex) => {
+      if (record === null || typeof record !== "object" || Array.isArray(record)) {
+        return;
+      }
+      const key = getBlockingKey(
+        record,
+        rule.sourceKey,
+        sourceIndex,
+        "Source",
+        rule,
+        options.normalization
+      );
+      if (key === void 0) {
+        return;
+      }
+      const matchingIndexes = targetBuckets.get(key);
+      if (!matchingIndexes) {
+        return;
+      }
+      for (const targetIndex of matchingIndexes) {
+        const pairId = `${sourceIndex}:${targetIndex}`;
+        if (!pairMap.has(pairId)) {
+          pairMap.set(pairId, {
+            sourceIndex,
+            targetIndex
+          });
+        }
+      }
+    });
+  }
+  const pairs = Array.from(pairMap.values());
+  const totalPossiblePairs = source.length * target.length;
+  const reductionPercentage = totalPossiblePairs === 0 ? 0 : (totalPossiblePairs - pairs.length) / totalPossiblePairs * 100;
+  return {
+    pairs,
+    stats: {
+      totalPossiblePairs,
+      candidatePairs: pairs.length,
+      reductionPercentage
+    }
+  };
+}
+
 // src/matching/matchRecords.ts
 function getStringValue(record, key, index, recordType) {
   const value = record[key];
@@ -591,7 +715,8 @@ function matchRecords(source, target, options) {
     threshold = 0.7,
     topK = 1,
     normalization = {},
-    algorithmOptions = {}
+    algorithmOptions = {},
+    blocking
   } = options;
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
     throw new Error("Threshold must be between 0 and 1.");
@@ -599,9 +724,27 @@ function matchRecords(source, target, options) {
   if (!Number.isInteger(topK) || topK < 1) {
     throw new Error("topK must be a positive integer.");
   }
+  const candidateTargetsBySource = /* @__PURE__ */ new Map();
+  if (blocking) {
+    const result = generateCandidates(source, target, {
+      ...blocking,
+      normalization: blocking.normalization ?? normalization
+    });
+    for (const pair of result.pairs) {
+      const indexes = candidateTargetsBySource.get(pair.sourceIndex);
+      if (indexes) {
+        indexes.push(pair.targetIndex);
+      } else {
+        candidateTargetsBySource.set(pair.sourceIndex, [pair.targetIndex]);
+      }
+    }
+  }
+  const allTargetIndexes = target.map((_, index) => index);
   const matches = source.map((sourceRecord, sourceIndex) => {
     const candidates = [];
-    target.forEach((targetRecord, targetIndex) => {
+    const targetIndexes = blocking ? candidateTargetsBySource.get(sourceIndex) ?? [] : allTargetIndexes;
+    targetIndexes.forEach((targetIndex) => {
+      const targetRecord = target[targetIndex];
       const fieldScores = [];
       for (const field of fields) {
         const weight = field.weight ?? 1;
@@ -644,6 +787,7 @@ function matchRecords(source, target, options) {
       }
       candidates.push({
         record: targetRecord,
+        targetIndex,
         score,
         method,
         fieldScores
@@ -774,6 +918,26 @@ function exportMatches(result, options = {}) {
 
 // src/deduplication/findDuplicates.ts
 function findDuplicatePairs(records, options) {
+  if (!Array.isArray(records)) {
+    throw new TypeError("Records must be an array.");
+  }
+  const invalidIndex = records.findIndex(
+    (record) => record === null || typeof record !== "object" || Array.isArray(record)
+  );
+  if (invalidIndex !== -1) {
+    throw new TypeError(
+      `Record at index ${invalidIndex} must be a non-array object.`
+    );
+  }
+  const blocking = options.blocking ? {
+    rules: options.blocking.rules.map((rule) => ({
+      sourceKey: rule.key,
+      targetKey: rule.key,
+      method: rule.method,
+      length: rule.length
+    })),
+    normalization: options.blocking.normalization ?? options.normalization
+  } : void 0;
   const matchingResult = matchRecords(records, records, {
     fields: options.fields.map((field) => ({
       sourceKey: field.key,
@@ -784,12 +948,13 @@ function findDuplicatePairs(records, options) {
     threshold: options.threshold,
     topK: Math.max(records.length, 1),
     normalization: options.normalization,
-    algorithmOptions: options.algorithmOptions
+    algorithmOptions: options.algorithmOptions,
+    blocking
   });
   const pairs = [];
   matchingResult.matches.forEach((match, firstIndex) => {
     match.candidates.forEach((candidate) => {
-      const secondIndex = records.indexOf(candidate.record);
+      const secondIndex = candidate.targetIndex;
       if (secondIndex <= firstIndex) {
         return;
       }
@@ -924,6 +1089,7 @@ export {
   exportUniqueCSV,
   findDuplicates,
   findDuplicatesCSV,
+  generateCandidates,
   jaccardSimilarity,
   jaroSimilarity,
   jaroWinklerSimilarity,

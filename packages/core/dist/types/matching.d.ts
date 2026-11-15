@@ -1,5 +1,6 @@
 import type { NormalizeOptions } from "../types/preprocessing.js";
 import type { QGramOptions } from "./similarity.js";
+import type { BlockingOptions } from "../blocking/types.js";
 export type SimilarityMethod = "levenshtein" | "damerau-levenshtein" | "jaro" | "jaro-winkler" | "jaccard" | "dice" | "cosine" | "soundex" | "metaphone";
 export interface FieldMatchScore {
     sourceKey: string;
@@ -18,6 +19,7 @@ interface CommonMatchingOptions {
     topK?: number;
     normalization?: NormalizeOptions;
     algorithmOptions?: QGramOptions;
+    blocking?: BlockingOptions;
 }
 export type MatchingOptions = CommonMatchingOptions & ({
     fields: MatchingField[];
@@ -30,6 +32,7 @@ export type MatchingOptions = CommonMatchingOptions & ({
 });
 export interface MatchCandidate<T> {
     record: T;
+    targetIndex: number;
     score: number;
     method: SimilarityMethod;
     fieldScores: FieldMatchScore[];

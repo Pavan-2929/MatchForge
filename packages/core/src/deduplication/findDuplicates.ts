@@ -11,6 +11,33 @@ export function findDuplicatePairs<T extends object>(
   records: T[],
   options: DuplicateOptions,
 ): DuplicatePair[] {
+  if (!Array.isArray(records)) {
+    throw new TypeError("Records must be an array.");
+  }
+
+  const invalidIndex = records.findIndex(
+    (record) =>
+      record === null || typeof record !== "object" || Array.isArray(record),
+  );
+
+  if (invalidIndex !== -1) {
+    throw new TypeError(
+      `Record at index ${invalidIndex} must be a non-array object.`,
+    );
+  }
+
+  const blocking = options.blocking
+    ? {
+        rules: options.blocking.rules.map((rule) => ({
+          sourceKey: rule.key,
+          targetKey: rule.key,
+          method: rule.method,
+          length: rule.length,
+        })),
+        normalization: options.blocking.normalization ?? options.normalization,
+      }
+    : undefined;
+
   const matchingResult = matchRecords(records, records, {
     fields: options.fields.map((field) => ({
       sourceKey: field.key,
@@ -22,14 +49,16 @@ export function findDuplicatePairs<T extends object>(
     topK: Math.max(records.length, 1),
     normalization: options.normalization,
     algorithmOptions: options.algorithmOptions,
+    blocking,
   });
 
   const pairs: DuplicatePair[] = [];
 
   matchingResult.matches.forEach((match, firstIndex) => {
     match.candidates.forEach((candidate) => {
-      const secondIndex = records.indexOf(candidate.record);
+      const secondIndex = candidate.targetIndex;
 
+      // Keep only one orientation of each pair and exclude self-matches.
       if (secondIndex <= firstIndex) {
         return;
       }
