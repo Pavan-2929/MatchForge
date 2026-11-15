@@ -1,6 +1,7 @@
 import { compareStrings } from "./compareStrings.js";
 import { getMatchingFields } from "./getMatchingFields.js";
 import { calculateWeightedScore } from "./calculateWeightedScore.js";
+import { generateCandidates } from "../blocking/generateCandidates.js";
 
 import type {
   MatchingOptions,
@@ -30,11 +31,18 @@ function getStringValue(
   return value;
 }
 
-function filterValidRecords<T>(records: T[]): T[] {
-  return records.filter(
-    (record) =>
-      record !== null && typeof record === "object" && !Array.isArray(record),
-  );
+function getValidRecords<T>(records: T[]) {
+  return records.flatMap((record, originalIndex) => {
+    if (
+      record === null ||
+      typeof record !== "object" ||
+      Array.isArray(record)
+    ) {
+      return [];
+    }
+
+    return [{ record, originalIndex }];
+  });
 }
 
 export function matchRecords<S extends object, T extends object>(
@@ -46,8 +54,8 @@ export function matchRecords<S extends object, T extends object>(
     throw new TypeError("Source and target must be arrays.");
   }
 
-  source = filterValidRecords(source);
-  target = filterValidRecords(target);
+  const validSource = getValidRecords(source);
+  const validTarget = getValidRecords(target);
 
   const fields = getMatchingFields(options);
 
@@ -57,6 +65,7 @@ export function matchRecords<S extends object, T extends object>(
     topK = 1,
     normalization = {},
     algorithmOptions = {},
+    blocking,
   } = options;
 
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
@@ -67,79 +76,114 @@ export function matchRecords<S extends object, T extends object>(
     throw new Error("topK must be a positive integer.");
   }
 
-  const matches = source.map((sourceRecord, sourceIndex) => {
-    const candidates: MatchCandidate<T>[] = [];
+  const sourceRecords = validSource.map(({ record }) => record);
+  const targetRecords = validTarget.map(({ record }) => record);
 
-    target.forEach((targetRecord, targetIndex) => {
-      const fieldScores: FieldMatchScore[] = [];
+  const candidateTargetsBySource = new Map<number, number[]>();
 
-      for (const field of fields) {
-        const weight = field.weight ?? 1;
-
-        if (weight === 0) {
-          continue;
-        }
-
-        const sourceValue = getStringValue(
-          sourceRecord,
-          field.sourceKey,
-          sourceIndex,
-          "Source",
-        );
-
-        const targetValue = getStringValue(
-          targetRecord,
-          field.targetKey,
-          targetIndex,
-          "Target",
-        );
-
-        if (sourceValue === undefined || targetValue === undefined) {
-          continue;
-        }
-
-        if (sourceValue.trim() === "" || targetValue.trim() === "") {
-          continue;
-        }
-
-        const score = compareStrings(sourceValue, targetValue, {
-          method,
-          normalization,
-          algorithmOptions,
-        });
-
-        fieldScores.push({
-          sourceKey: field.sourceKey,
-          targetKey: field.targetKey,
-          score,
-          weight,
-        });
-      }
-
-      const score = calculateWeightedScore(fieldScores);
-
-      if (score === null || score < threshold) {
-        return;
-      }
-
-      candidates.push({
-        record: targetRecord,
-        score,
-        method,
-        fieldScores,
-      });
+  if (blocking) {
+    const result = generateCandidates(sourceRecords, targetRecords, {
+      ...blocking,
+      normalization: blocking.normalization ?? normalization,
     });
 
-    candidates.sort((a, b) => b.score - a.score);
+    for (const pair of result.pairs) {
+      const indexes = candidateTargetsBySource.get(pair.sourceIndex);
 
-    const topCandidates = candidates.slice(0, topK);
+      if (indexes) {
+        indexes.push(pair.targetIndex);
+      } else {
+        candidateTargetsBySource.set(pair.sourceIndex, [pair.targetIndex]);
+      }
+    }
+  }
 
-    return {
-      source: sourceRecord,
-      candidates: topCandidates,
-      matched: topCandidates.length > 0,
-    };
-  });
+  const allTargetIndexes = targetRecords.map((_, index) => index);
+
+  const matches = validSource.map(
+    ({ record: sourceRecord, originalIndex: sourceIndex }, validIndex) => {
+      const candidates: MatchCandidate<T>[] = [];
+
+      const targetIndexes = blocking
+        ? (candidateTargetsBySource.get(validIndex) ?? [])
+        : allTargetIndexes;
+
+      targetIndexes.forEach((validTargetIndex) => {
+        const targetRecord = targetRecords[validTargetIndex];
+        const targetIndex = validTarget[validTargetIndex].originalIndex;
+
+        const fieldScores: FieldMatchScore[] = [];
+
+        for (const field of fields) {
+          const weight = field.weight ?? 1;
+
+          if (weight === 0) {
+            continue;
+          }
+
+          const sourceValue = getStringValue(
+            sourceRecord,
+            field.sourceKey,
+            sourceIndex,
+            "Source",
+          );
+
+          const targetValue = getStringValue(
+            targetRecord,
+            field.targetKey,
+            targetIndex,
+            "Target",
+          );
+
+          if (sourceValue === undefined || targetValue === undefined) {
+            continue;
+          }
+
+          if (sourceValue.trim() === "" || targetValue.trim() === "") {
+            continue;
+          }
+
+          const score = compareStrings(sourceValue, targetValue, {
+            method,
+            normalization,
+            algorithmOptions,
+          });
+
+          fieldScores.push({
+            sourceKey: field.sourceKey,
+            targetKey: field.targetKey,
+            score,
+            weight,
+          });
+        }
+
+        const score = calculateWeightedScore(fieldScores);
+
+        if (score === null || score < threshold) {
+          return;
+        }
+
+        candidates.push({
+          record: targetRecord,
+          targetIndex,
+          score,
+          method,
+          fieldScores,
+        });
+      });
+
+      candidates.sort((a, b) => b.score - a.score);
+
+      const topCandidates = candidates.slice(0, topK);
+
+      return {
+        source: sourceRecord,
+        sourceIndex,
+        candidates: topCandidates,
+        matched: topCandidates.length > 0,
+      };
+    },
+  );
 
   const unmatched = matches
     .filter((match) => !match.matched)

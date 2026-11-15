@@ -20,4 +20,14 @@ export { findDuplicates } from "./deduplication/findDuplicates.js";
 export { findDuplicatesCSV } from "./deduplication/findDuplicatesCSV.js";
 export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
 export type { DuplicateField, DuplicateOptions, DuplicatePair, DuplicateGroup, DuplicateResult, DuplicateCSVResult, UniqueCSVExportOptions, } from "./deduplication/types.js";
+export { generateCandidates } from "./blocking/generateCandidates.js";
+export type { BlockingMethod, BlockingRule, BlockingOptions, CandidatePair, CandidateGenerationStats, CandidateGenerationResult, DuplicateBlockingRule, DuplicateBlockingOptions, } from "./blocking/types.js";
+export { evaluateMatches } from "./evaluation/evaluateMatches.js";
+export type { GroundTruthPair, EvaluationOptions, ConfusionMatrix, EvaluationMetrics, EvaluationResult, } from "./evaluation/types.js";
+export { evaluateBlocking } from "./blocking-evaluation/evaluateBlocking.js";
+export type { BlockingEvaluationOptions, BlockingEvaluationMetrics, BlockingEvaluationResult, } from "./blocking-evaluation/types.js";
+export { evaluateMatchesCSV } from "./evaluation/csv/evaluateMatchesCSV.js";
+export type { CSVEvaluationOptions, CSVEvaluationResult, } from "./evaluation/csv/types.js";
+export { evaluateBlockingCSV } from "./blocking-evaluation/csv/evaluateBlockingCSV.js";
+export type { CSVBlockingEvaluationOptions, CSVBlockingEvaluationResult, } from "./blocking-evaluation/csv/types.js";
 //# sourceMappingURL=index.d.ts.map

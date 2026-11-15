@@ -71,3 +71,52 @@ export type {
   DuplicateCSVResult,
   UniqueCSVExportOptions,
 } from "./deduplication/types.js";
+
+export { generateCandidates } from "./blocking/generateCandidates.js";
+
+export type {
+  BlockingMethod,
+  BlockingRule,
+  BlockingOptions,
+  CandidatePair,
+  CandidateGenerationStats,
+  CandidateGenerationResult,
+  DuplicateBlockingRule,
+  DuplicateBlockingOptions,
+} from "./blocking/types.js";
+
+// Evaluation
+export { evaluateMatches } from "./evaluation/evaluateMatches.js";
+
+export type {
+  GroundTruthPair,
+  EvaluationOptions,
+  ConfusionMatrix,
+  EvaluationMetrics,
+  EvaluationResult,
+} from "./evaluation/types.js";
+
+// Blocking Evaluation
+export { evaluateBlocking } from "./blocking-evaluation/evaluateBlocking.js";
+
+export type {
+  BlockingEvaluationOptions,
+  BlockingEvaluationMetrics,
+  BlockingEvaluationResult,
+} from "./blocking-evaluation/types.js";
+
+// CSV Matching Evaluation
+export { evaluateMatchesCSV } from "./evaluation/csv/evaluateMatchesCSV.js";
+
+export type {
+  CSVEvaluationOptions,
+  CSVEvaluationResult,
+} from "./evaluation/csv/types.js";
+
+// CSV Blocking Evaluation
+export { evaluateBlockingCSV } from "./blocking-evaluation/csv/evaluateBlockingCSV.js";
+
+export type {
+  CSVBlockingEvaluationOptions,
+  CSVBlockingEvaluationResult,
+} from "./blocking-evaluation/csv/types.js";
