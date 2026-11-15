@@ -170,6 +170,8 @@ describe("generateCandidates", () => {
     });
 
     expect(result.stats).toEqual({
+      totalSourceRecords: 2,
+      totalTargetRecords: 3,
       totalPossiblePairs: 6,
       candidatePairs: 2,
       reductionPercentage: (4 / 6) * 100,
@@ -190,6 +192,8 @@ describe("generateCandidates", () => {
     expect(result).toEqual({
       pairs: [],
       stats: {
+        totalSourceRecords: 0,
+        totalTargetRecords: 0,
         totalPossiblePairs: 0,
         candidatePairs: 0,
         reductionPercentage: 0,

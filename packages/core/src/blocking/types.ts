@@ -20,10 +20,13 @@ export interface CandidatePair {
 }
 
 export interface CandidateGenerationStats {
+  totalSourceRecords: number;
+  totalTargetRecords: number;
   totalPossiblePairs: number;
   candidatePairs: number;
   reductionPercentage: number;
 }
+
 
 export interface CandidateGenerationResult {
   pairs: CandidatePair[];
