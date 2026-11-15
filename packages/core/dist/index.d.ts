@@ -22,4 +22,6 @@ export { exportUniqueCSV } from "./deduplication/exportUniqueCSV.js";
 export type { DuplicateField, DuplicateOptions, DuplicatePair, DuplicateGroup, DuplicateResult, DuplicateCSVResult, UniqueCSVExportOptions, } from "./deduplication/types.js";
 export { generateCandidates } from "./blocking/generateCandidates.js";
 export type { BlockingMethod, BlockingRule, BlockingOptions, CandidatePair, CandidateGenerationStats, CandidateGenerationResult, DuplicateBlockingRule, DuplicateBlockingOptions, } from "./blocking/types.js";
+export { evaluateMatches } from "./evaluation/evaluateMatches.js";
+export type { GroundTruthPair, EvaluationOptions, ConfusionMatrix, EvaluationMetrics, EvaluationResult, } from "./evaluation/types.js";
 //# sourceMappingURL=index.d.ts.map
