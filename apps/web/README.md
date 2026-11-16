@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MatchForge Documentation
 
-## Getting Started
+Welcome to the official documentation website for **MatchForge** — a toolkit for string similarity, record matching, and entity resolution.
 
-First, run the development server:
+This website provides explanations, practical examples, guides, and interactive playgrounds to help developers understand how MatchForge works and explore its capabilities.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## What's Inside?
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Getting Started:** Introduction to MatchForge and installation instructions.
+- **Foundations:** Learn about text preprocessing and string similarity algorithms.
+- **Record Operations:** Explore record matching, dataset deduplication, and blocking techniques.
+- **Evaluation:** Understand how to evaluate matching results and candidate generation using relevant metrics.
+- **Interactive Playgrounds:** Experiment with different algorithms, configurations, and matching workflows directly in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Explore the Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The documentation is organized to take you from fundamental concepts to practical record-matching workflows. Each section includes explanations and examples to make the concepts easier to understand and apply.
 
-## Learn More
+You can also use the interactive playgrounds to experiment with inputs and observe how different approaches affect the results.
 
-To learn more about Next.js, take a look at the following resources:
+## Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Contributions, suggestions, and feedback are welcome!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If you'd like to contribute or report an issue, visit the [GitHub repository](https://github.com/Pavan-2929/MatchForge).
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is open source and available under the MIT License.
