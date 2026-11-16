@@ -10,6 +10,7 @@ import {
   GitCompareArrows,
   ScanText,
   CopyCheck,
+  Blocks,
 } from "lucide-react";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
@@ -49,6 +50,31 @@ const sections = [
         label: "CSV-Dataset deduplication",
         href: "/csv-dataset-deduplication",
         icon: FileSpreadsheet,
+      },
+      {
+        label: "Blocking",
+        href: "/blocking",
+        icon: Blocks,
+      },
+      {
+        label: "Matching Evaluation",
+        href: "/matching-evaluation",
+        icon: Blocks,
+      },
+      {
+        label: "Blocking Evaluation",
+        href: "/blocking-evaluation",
+        icon: Blocks,
+      },
+      {
+        label: "CSV Evaluation",
+        href: "/csv-evaluation",
+        icon: Blocks,
+      },
+      {
+        label: "CSV Blocking Evaluation",
+        href: "/csv-blocking-evaluation",
+        icon: Blocks,
       },
     ],
   },
