@@ -1,6 +1,6 @@
 {
   "name": "@matchforge/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A TypeScript toolkit for string similarity and entity resolution",
   "license": "MIT",
   "type": "module",
