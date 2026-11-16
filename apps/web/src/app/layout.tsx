@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
+
 import "./globals.css";
 import { DocsLayout } from "@/components/layout/docs-layout";
-import Navbar from "@/components/layout/navbar";
-import Footer from "@/components/layout/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,11 +53,8 @@ export default function RootLayout({
           speed={300}
           shadow={false}
         />
-        <DocsLayout>
-          <Navbar />
-          {children}
-          <Footer />
-        </DocsLayout>
+
+        <DocsLayout>{children}</DocsLayout>
       </body>
     </html>
   );
